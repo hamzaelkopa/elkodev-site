@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ELKO.DEV — Digital AI Services</title>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;500;700&display=swap" rel="stylesheet">
+<style>
+body {
+  margin:0;
+  font-family:Poppins, sans-serif;
+  background:#0b0f1a;
+  color:white;
+}
+
+header {
+  padding:60px 20px;
+  text-align:center;
+  background:linear-gradient(135deg,#0b0f1a,#111a2e);
+}
+
+.logo {
+  width:140px;
+}
+
+h1 {
+  font-size:42px;
+  margin:20px 0 10px;
+  background:linear-gradient(90deg,#3aa0ff,#b06cff);
+  -webkit-background-clip:text;
+  -webkit-text-fill-color:transparent;
+}
+
+.tagline {
+  opacity:.8;
+}
+
+.btn {
+  display:inline-block;
+  margin-top:25px;
+  padding:14px 26px;
+  border-radius:12px;
+  text-decoration:none;
+  font-weight:600;
+  background:linear-gradient(90deg,#3aa0ff,#b06cff);
+  color:white;
+}
+
+.section {
+  padding:70px 20px;
+  max-width:1100px;
+  margin:auto;
+}
+
+.cards {
+  display:grid;
+  grid-template-columns:repeat(auto-fit,minmax(260px,1fr));
+  gap:25px;
+}
+
+.card {
+  background:#111a2e;
+  padding:28px;
+  border-radius:18px;
+  border:1px solid #1f2a44;
+  transition:.3s;
+}
+
+.card:hover {
+  transform:translateY(-6px);
+  border-color:#7c6cff;
+}
+
+.price {
+  font-size:22px;
+  margin:10px 0;
+  color:#9f7bff;
+}
+
+footer {
+  text-align:center;
+  padding:40px;
+  opacity:.6;
+}
+</style>
+</head>
+
+<body>
+
+<header>
+  <!-- ضع صورة الشعار هنا -->
+  <img src="logo.png" class="logo">
+  <h1>ELKO.DEV</h1>
+  <p class="tagline">Premium AI Digital Services & Products</p>
+  <a class="btn" href="#services">Explore Services</a>
+</header>
+
+<section class="section" id="services">
+  <h2>Services</h2>
+  <div class="cards">
+
+    <div class="card">
+      <h3>AI Automation Setup</h3>
+      <p>Custom AI workflows for your business.</p>
+      <div class="price">$49</div>
+      <a class="btn" href="#">Order Now</a>
+    </div>
+
+    <div class="card">
+      <h3>Website Generator</h3>
+      <p>AI-built websites ready to deploy.</p>
+      <div class="price">$79</div>
+      <a class="btn" href="#">Order Now</a>
+    </div>
+
+  </div>
+</section>
+
+<section class="section">
+  <h2>Digital Products</h2>
+  <div class="cards">
+
+    <div class="card">
+      <h3>AI Prompt Pack</h3>
+      <p>500+ premium prompts bundle.</p>
+      <div class="price">$19</div>
+      <a class="btn" href="#">Buy</a>
+    </div>
+
+    <div class="card">
+      <h3>Automation Templates</h3>
+      <p>Ready-to-use workflow files.</p>
+      <div class="price">$29</div>
+      <a class="btn" href="#">Buy</a>
+    </div>
+
+  </div>
+</section>
+
+<footer>
+© 2026 ELKO.DEV — All rights reserved
+</footer>
+
+</body>
+</html>
