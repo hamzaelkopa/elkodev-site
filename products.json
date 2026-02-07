@@ -1,12 +1,18 @@
 [
  {
+  "id":1,
   "name":"AI Prompt Vault",
   "price":19,
-  "link":"product.html"
+  "desc":"500+ pro AI prompts",
+  "image":"logo.png",
+  "buy":"https://gumroad.com/yourlink"
  },
  {
+  "id":2,
   "name":"Automation Templates",
   "price":29,
-  "link":"product.html"
+  "desc":"Ready AI workflows",
+  "image":"logo.png",
+  "buy":"https://gumroad.com/yourlink"
  }
 ]
