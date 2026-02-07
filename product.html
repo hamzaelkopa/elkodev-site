@@ -74,6 +74,37 @@ body{
     <a class="btn" href="PUT_PAYMENT_LINK_HERE">Buy Now</a>
   </div>
 </div>
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<div id="view" style="max-width:900px;margin:60px auto"></div>
+
+<script>
+async function load(){
+ const id = new URLSearchParams(location.search).get("id");
+ const r = await fetch("products.json");
+ const data = await r.json();
+ const p = data.find(x=>x.id==id);
+
+ view.innerHTML = `
+  <div class="card">
+   <img src="${p.image}" style="width:100%;border-radius:14px">
+   <h1>${p.name}</h1>
+   <p>${p.desc}</p>
+   <h2>$${p.price}</h2>
+   <a class="btn" href="${p.buy}">Buy Now</a>
+  </div>`;
+}
+load();
+</script>
+
+</body>
+</html>
 
 </body>
 </html>
