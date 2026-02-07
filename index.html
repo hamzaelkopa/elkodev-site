@@ -295,8 +295,46 @@ ELKO.DEV STORE
 <script src="app.js"></script>
 </body>
 </html>
+<canvas id="net"></canvas>
+<script>
+const c=document.getElementById("net");
+const x=c.getContext("2d");
+function R(){c.width=innerWidth;c.height=innerHeight}
+R();onresize=R;
+let m={x:0,y:0};onmousemove=e=>m=e;
+
+let p=[...Array(70)].map(()=>({x:Math.random()*c.width,y:Math.random()*c.height,vx:Math.random()-0.5,vy:Math.random()-0.5}));
+
+function d(){
+ x.clearRect(0,0,c.width,c.height);
+ p.forEach(a=>{
+  a.x+=a.vx;a.y+=a.vy;
+  if(a.x<0||a.x>c.width)a.vx*=-1;
+  if(a.y<0||a.y>c.height)a.vy*=-1;
+  p.forEach(b=>{
+   let dx=a.x-b.x,dy=a.y-b.y,dist=Math.hypot(dx,dy);
+   if(dist<120){
+    x.globalAlpha=1-dist/120;
+    x.strokeStyle="#7c6cff";
+    x.beginPath();
+    x.moveTo(a.x,a.y);
+    x.lineTo(b.x,b.y);
+    x.stroke();
+   }
+  });
+ });
+ x.globalAlpha=1;
+ requestAnimationFrame(d);
+}
+d();
+</script>
+
+<style>
+#net{position:fixed;inset:0;z-index:-1;opacity:.35}
+</style>
 
 </body>
 </html>
+
 
 
