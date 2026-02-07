@@ -1,197 +1,220 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
-<title>ELKO.DEV — AI Digital Platform</title>
-<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=Poppins:wght@300;500&display=swap" rel="stylesheet">
+<title>ELKO.DEV — AI Platform</title>
+
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;800&family=Poppins:wght@300;500&display=swap" rel="stylesheet">
+
 <style>
 *{box-sizing:border-box}
 body{
-  margin:0;
-  font-family:Poppins,sans-serif;
-  background:radial-gradient(circle at 20% 20%,#18213a,#05070f 60%);
-  color:#e9ecff;
+ margin:0;
+ font-family:Poppins,sans-serif;
+ background:#05070f;
+ color:#e8ecff;
+ overflow-x:hidden;
 }
+
+/* animated background */
+.bg{
+ position:fixed;
+ inset:0;
+ background:
+ radial-gradient(circle at 20% 30%,#1a2a6a,transparent 40%),
+ radial-gradient(circle at 80% 60%,#6a1ab0,transparent 45%);
+ filter:blur(60px);
+ opacity:.35;
+ animation:movebg 12s linear infinite alternate;
+ z-index:-1;
+}
+@keyframes movebg{
+ from{transform:translateY(-40px)}
+ to{transform:translateY(40px)}
+}
+
 nav{
-  display:flex;justify-content:space-between;align-items:center;
-  padding:18px 28px;
-  background:rgba(10,14,28,.7);
-  backdrop-filter:blur(8px);
-  border-bottom:1px solid #1c2444;
+ display:flex;
+ justify-content:space-between;
+ padding:20px 28px;
+ background:#0b1022aa;
+ backdrop-filter:blur(8px);
+ border-bottom:1px solid #1c2444;
 }
+
 .brand{
-  font-family:Orbitron,sans-serif;
-  font-weight:700;
-  letter-spacing:2px;
-  background:linear-gradient(90deg,#39a0ff,#b46cff);
-  -webkit-background-clip:text;
-  -webkit-text-fill-color:transparent;
+ font-family:Orbitron;
+ font-size:22px;
+ letter-spacing:2px;
+ background:linear-gradient(90deg,#39a0ff,#c77dff);
+ -webkit-background-clip:text;
+ -webkit-text-fill-color:transparent;
 }
-nav a{color:#cfd6ff;text-decoration:none;margin-left:18px;font-size:14px}
 
 .hero{
-  padding:110px 20px 90px;
-  text-align:center;
-  position:relative;
+ text-align:center;
+ padding:120px 20px 100px;
+ animation:fadeUp 1s ease;
 }
+
 .hero h1{
-  font-family:Orbitron,sans-serif;
-  font-size:54px;
-  margin:0 0 10px;
-  background:linear-gradient(90deg,#39a0ff,#7af0ff,#c77dff);
-  -webkit-background-clip:text;
-  -webkit-text-fill-color:transparent;
+ font-family:Orbitron;
+ font-size:56px;
+ margin:0;
+ background:linear-gradient(90deg,#39a0ff,#7af0ff,#c77dff);
+ -webkit-background-clip:text;
+ -webkit-text-fill-color:transparent;
 }
-.hero p{opacity:.8;font-size:18px}
+
+.hero p{
+ opacity:.8;
+ margin-top:10px;
+}
+
+@keyframes fadeUp{
+ from{opacity:0;transform:translateY(40px)}
+ to{opacity:1;transform:translateY(0)}
+}
 
 .btn{
-  display:inline-block;
-  margin-top:28px;
-  padding:14px 30px;
-  border-radius:14px;
-  font-weight:600;
-  text-decoration:none;
-  color:white;
-  background:linear-gradient(90deg,#39a0ff,#b46cff);
-  box-shadow:0 0 25px rgba(120,120,255,.35);
-  transition:.25s;
+ display:inline-block;
+ margin-top:28px;
+ padding:15px 32px;
+ border-radius:14px;
+ text-decoration:none;
+ color:white;
+ font-weight:600;
+ background:linear-gradient(90deg,#39a0ff,#b46cff);
+ box-shadow:0 0 25px rgba(150,120,255,.6);
+ transition:.25s;
 }
-.btn:hover{transform:translateY(-3px);box-shadow:0 0 35px rgba(160,120,255,.6)}
+.btn:hover{
+ transform:translateY(-4px) scale(1.03);
+ box-shadow:0 0 45px rgba(160,130,255,.9);
+}
 
 .section{
-  max-width:1150px;
-  margin:auto;
-  padding:70px 20px;
+ max-width:1150px;
+ margin:auto;
+ padding:80px 20px;
 }
+
 .section h2{
-  font-family:Orbitron;
-  font-size:28px;
-  margin-bottom:30px;
+ font-family:Orbitron;
+ margin-bottom:35px;
 }
 
 .grid{
-  display:grid;
-  grid-template-columns:repeat(auto-fit,minmax(260px,1fr));
-  gap:26px;
+ display:grid;
+ grid-template-columns:repeat(auto-fit,minmax(260px,1fr));
+ gap:28px;
 }
 
 .card{
-  background:linear-gradient(160deg,#0f1730,#0b1022);
-  border:1px solid #202a52;
-  border-radius:20px;
-  padding:28px;
-  position:relative;
-  overflow:hidden;
-  transition:.3s;
+ background:#0c132b;
+ border:1px solid #202a52;
+ border-radius:20px;
+ padding:28px;
+ transition:.35s;
+ position:relative;
+ overflow:hidden;
+ animation:fadeUp .8s ease;
 }
-.card:before{
-  content:"";
-  position:absolute;
-  inset:0;
-  background:linear-gradient(120deg,transparent,rgba(140,120,255,.25),transparent);
-  opacity:0;
-  transition:.3s;
+
+.card::after{
+ content:"";
+ position:absolute;
+ inset:-2px;
+ background:linear-gradient(120deg,transparent,#7c6cff,transparent);
+ opacity:.15;
 }
-.card:hover:before{opacity:1}
-.card:hover{transform:translateY(-8px);border-color:#7c6cff}
+
+.card:hover{
+ transform:translateY(-10px) rotateX(3deg);
+ box-shadow:0 0 50px rgba(140,120,255,.5);
+ border-color:#7c6cff;
+}
 
 .price{
-  font-size:24px;
-  margin:12px 0;
-  color:#b46cff;
-  font-weight:700;
+ font-size:24px;
+ color:#b46cff;
+ font-weight:700;
+ margin:12px 0;
 }
 
 footer{
-  text-align:center;
-  padding:50px 20px;
-  border-top:1px solid #1c2444;
-  opacity:.6;
-  font-size:14px;
+ text-align:center;
+ padding:50px 20px;
+ opacity:.6;
+ border-top:1px solid #1c2444;
 }
 </style>
 </head>
 
 <body>
 
+<div class="bg"></div>
+
 <nav>
-  <div class="brand">ELKO.DEV</div>
-  <div>
-    <a href="#services">Services</a>
-    <a href="#products">Products</a>
-  </div>
+ <div class="brand">ELKO.DEV</div>
+ <div>
+  <a href="#services" style="color:#cfd6ff;text-decoration:none;margin-right:15px">Services</a>
+  <a href="#products" style="color:#cfd6ff;text-decoration:none">Products</a>
+ </div>
 </nav>
 
 <section class="hero">
-  <h1>AI POWERED DIGITAL LAB</h1>
-  <p>Premium AI services and digital assets for modern creators</p>
-  <a href="#services" class="btn">Start Now</a>
+ <h1>AI DIGITAL LAB</h1>
+ <p>Premium AI services & digital assets</p>
+ <a href="#products" class="btn">Explore Products</a>
 </section>
 
 <section class="section" id="services">
-  <h2>Services</h2>
-  <div class="grid">
+ <h2>Services</h2>
+ <div class="grid">
 
-    <div class="card">
-      <h3>AI Website Builder</h3>
-      <p>Custom smart websites generated with AI.</p>
-      <div class="price">$79</div>
-      <a class="btn" href="#">Order</a>
-    </div>
-
-    <div class="card">
-      <h3>Automation Systems</h3>
-      <p>Business workflow automation setup.</p>
-      <div class="price">$99</div>
-      <a class="btn" href="#">Order</a>
-    </div>
-
+  <div class="card">
+   <h3>AI Website Builder</h3>
+   <p>Smart sites generated with AI.</p>
+   <div class="price">$79</div>
+   <a href="product.html" class="btn">View</a>
   </div>
+
+  <div class="card">
+   <h3>Automation Setup</h3>
+   <p>Workflow & AI systems.</p>
+   <div class="price">$99</div>
+   <a href="product.html" class="btn">View</a>
+  </div>
+
+ </div>
 </section>
 
 <section class="section" id="products">
-  <h2>Digital Products</h2>
-  <div class="grid">
+ <h2>Products</h2>
+ <div class="grid">
 
-    <div class="card">
-      <h3>AI Prompt Vault</h3>
-      <p>High-impact premium prompt packs.</p>
-      <div class="price">$19</div>
-      <a class="btn" href="#">Buy</a>
-    </div>
-
-    <div class="card">
-      <h3>Automation Templates</h3>
-      <p>Ready AI workflow files.</p>
-      <div class="price">$29</div>
-      <a class="btn" href="#">Buy</a>
-    </div>
-
+  <div class="card">
+   <h3>AI Prompt Vault</h3>
+   <p>500+ pro prompts</p>
+   <div class="price">$19</div>
+   <a href="product.html" class="btn">Open</a>
   </div>
+
+  <div class="card">
+   <h3>Automation Templates</h3>
+   <p>Ready workflows</p>
+   <div class="price">$29</div>
+   <a href="product.html" class="btn">Open</a>
+  </div>
+
+ </div>
 </section>
 
 <footer>
-© ELKO.DEV — AI Digital Platform
+© ELKO.DEV — Animated Pro UI
 </footer>
-<script>
-fetch('products.json')
-.then(r=>r.json())
-.then(data=>{
- let grid=document.querySelector("#productsGrid");
- grid.innerHTML="";
- data.forEach(p=>{
-   grid.innerHTML+=`
-   <div class="card">
-     <h3>${p.name}</h3>
-     <div class="price">$${p.price}</div>
-     <a class="btn" href="${p.link}">View</a>
-   </div>`;
- });
-});
-</script>
 
 </body>
 </html>
-
