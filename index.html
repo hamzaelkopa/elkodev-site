@@ -215,6 +215,68 @@ footer{
 <footer>
 © ELKO.DEV — Animated Pro UI
 </footer>
+<canvas id="net"></canvas>
+
+<script>
+const c = document.getElementById("net");
+const x = c.getContext("2d");
+function resize(){ c.width=innerWidth; c.height=innerHeight }
+resize(); onresize=resize;
+
+let mouse={x:0,y:0};
+onmousemove=e=>mouse=e;
+
+let pts=[...Array(90)].map(()=>({
+ x:Math.random()*innerWidth,
+ y:Math.random()*innerHeight,
+ vx:(Math.random()-.5)*0.6,
+ vy:(Math.random()-.5)*0.6
+}));
+
+function draw(){
+ x.clearRect(0,0,c.width,c.height);
+
+ pts.forEach(p=>{
+  p.x+=p.vx; p.y+=p.vy;
+  if(p.x<0||p.x>c.width) p.vx*=-1;
+  if(p.y<0||p.y>c.height) p.vy*=-1;
+
+  let dx=p.x-mouse.x, dy=p.y-mouse.y;
+  let d=Math.sqrt(dx*dx+dy*dy);
+  if(d<140){ p.vx+=dx/d*0.01; p.vy+=dy/d*0.01; }
+
+  x.fillRect(p.x,p.y,2,2);
+ });
+
+ for(let a of pts){
+  for(let b of pts){
+   let dx=a.x-b.x, dy=a.y-b.y;
+   let d=Math.sqrt(dx*dx+dy*dy);
+   if(d<120){
+    x.globalAlpha=1-d/120;
+    x.beginPath();
+    x.moveTo(a.x,a.y);
+    x.lineTo(b.x,b.y);
+    x.strokeStyle="#7c6cff";
+    x.stroke();
+   }
+  }
+ }
+ x.globalAlpha=1;
+ requestAnimationFrame(draw);
+}
+draw();
+</script>
+
+<style>
+#net{
+ position:fixed;
+ inset:0;
+ z-index:-2;
+ opacity:.35;
+}
+</style>
 
 </body>
 </html>
+
