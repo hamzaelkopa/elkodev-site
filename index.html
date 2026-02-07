@@ -1,209 +1,430 @@
-<!DOCTYPE html>
-<html lang="en" dir="ltr">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>EliteDigital - Premium Assets & Services</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-    <style>
-        body { font-family: 'Plus Jakarta Sans', sans-serif; }
-        .product-card { transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1); }
-        .product-card:hover { transform: translateY(-8px); shadow: 0 20px 25px -5px rgb(0 0 0 / 0.1); }
-        .category-pill.active { background-color: #4f46e5; color: white; }
-        .custom-scrollbar::-webkit-scrollbar { width: 6px; }
-        .custom-scrollbar::-webkit-scrollbar-track { background: #f1f1f1; }
-        .custom-scrollbar::-webkit-scrollbar-thumb { background: #c7d2fe; border-radius: 10px; }
-    </style>
-</head>
-<body class="bg-[#fafaff] text-slate-900">
+import React, { useState, useEffect, useRef } from 'react';
+import { initializeApp } from 'firebase/app';
+import { 
+  getAuth, 
+  signInAnonymously, 
+  signInWithCustomToken, 
+  onAuthStateChanged,
+  signOut
+} from 'firebase/auth';
+import { 
+  getFirestore, 
+  collection, 
+  doc, 
+  setDoc, 
+  getDoc, 
+  addDoc, 
+  onSnapshot, 
+  updateDoc, 
+  arrayUnion, 
+  arrayRemove,
+  query,
+  where
+} from 'firebase/firestore';
+import { 
+  User, 
+  Home, 
+  Search, 
+  PlusSquare, 
+  Heart, 
+  MessageCircle, 
+  Share2, 
+  CheckCircle, 
+  Link as LinkIcon, 
+  Camera, 
+  Film, 
+  MoreHorizontal,
+  LogOut,
+  Send,
+  Video,
+  Sparkles,
+  Edit3,
+  Globe,
+  Lock,
+  Image as ImageIcon
+} from 'lucide-react';
 
-    <!-- Announcement Bar -->
-    <div class="bg-indigo-600 text-white py-2 text-center text-sm font-medium">
-        🚀 Flash Sale: 20% OFF on all Design Services this week!
-    </div>
+// Firebase Configuration
+const firebaseConfig = JSON.parse(__firebase_config);
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const db = getFirestore(app);
+const appId = typeof __app_id !== 'undefined' ? __app_id : 'doncod-social-app-v2';
+const apiKey = ""; // Gemini API Key
 
-    <!-- Navigation -->
-    <nav class="sticky top-0 z-50 bg-white/80 backdrop-blur-md border-b border-indigo-50">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div class="flex justify-between items-center h-20">
-                <div class="flex items-center gap-3">
-                    <div class="bg-indigo-600 p-2 rounded-xl">
-                        <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
-                    </div>
-                    <span class="text-xl font-extrabold tracking-tight text-slate-900">ELITE<span class="text-indigo-600">DIGITAL</span></span>
-                </div>
+export default function App() {
+  const [user, setUser] = useState(null);
+  const [isAuthLoading, setIsAuthLoading] = useState(true);
+  const [activeTab, setActiveTab] = useState('feed'); 
+  const [posts, setPosts] = useState([]);
+  const [users, setUsers] = useState([]);
+  const [userProfile, setUserProfile] = useState(null);
+  const [isEditing, setIsEditing] = useState(false);
+  
+  // AI Assistant State
+  const [chatMessages, setChatMessages] = useState([
+    { role: 'assistant', text: 'مرحباً بك في عالم Doncod الراقي. أنا مساعدك الشخصي، كيف يمكنني خدمتك اليوم؟' }
+  ]);
+  const [inputMessage, setInputMessage] = useState('');
+  const [isTyping, setIsTyping] = useState(false);
 
-                <div class="flex items-center gap-4">
-                    <button onclick="toggleCart()" class="relative p-2.5 bg-indigo-50 rounded-full hover:bg-indigo-100 transition-colors group">
-                        <svg class="w-6 h-6 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"/></svg>
-                        <span id="cart-count" class="absolute -top-1 -right-1 bg-red-500 text-white text-[10px] font-bold rounded-full h-5 w-5 flex items-center justify-center border-2 border-white">0</span>
-                    </button>
-                </div>
-            </div>
-        </div>
-    </nav>
-
-    <!-- Hero Section -->
-    <header class="py-16 px-4">
-        <div class="max-w-4xl mx-auto text-center">
-            <h1 class="text-5xl md:text-6xl font-extrabold text-slate-900 mb-6 leading-tight">
-                Premium Digital <span class="text-indigo-600 underline decoration-indigo-200 underline-offset-8">Goods</span> for Creators
-            </h1>
-            <p class="text-lg text-slate-600 mb-10 leading-relaxed">
-                Discover curated high-quality software licenses, unique design templates, and world-class professional services. Instant delivery worldwide.
-            </p>
-            
-            <!-- Categories Filter -->
-            <div class="flex flex-wrap justify-center gap-3" id="categories-container">
-                <button onclick="filterCategory('All')" class="category-pill active px-6 py-2.5 rounded-full text-sm font-semibold border border-indigo-100 hover:border-indigo-600 transition-all">All Products</button>
-                <button onclick="filterCategory('Software')" class="category-pill px-6 py-2.5 rounded-full text-sm font-semibold border border-indigo-100 hover:border-indigo-600 transition-all bg-white">Software</button>
-                <button onclick="filterCategory('Templates')" class="category-pill px-6 py-2.5 rounded-full text-sm font-semibold border border-indigo-100 hover:border-indigo-600 transition-all bg-white">Templates</button>
-                <button onclick="filterCategory('Services')" class="category-pill px-6 py-2.5 rounded-full text-sm font-semibold border border-indigo-100 hover:border-indigo-600 transition-all bg-white">Services</button>
-                <button onclick="filterCategory('Gaming')" class="category-pill px-6 py-2.5 rounded-full text-sm font-semibold border border-indigo-100 hover:border-indigo-600 transition-all bg-white">Gaming</button>
-            </div>
-        </div>
-    </header>
-
-    <!-- Products Grid -->
-    <main class="max-w-7xl mx-auto px-4 pb-24">
-        <div id="products-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
-            <!-- Products injected here -->
-        </div>
-    </main>
-
-    <!-- Sidebar Cart -->
-    <div id="cart-sidebar" class="fixed inset-y-0 right-0 w-full max-w-sm bg-white shadow-2xl z-[100] transform translate-x-full transition-transform duration-500 ease-in-out flex flex-col">
-        <div class="p-6 border-b border-slate-100 flex justify-between items-center">
-            <h2 class="text-xl font-bold">Your Selection</h2>
-            <button onclick="toggleCart()" class="p-2 hover:bg-slate-100 rounded-lg">&times;</button>
-        </div>
+  // Authentication Setup
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, async (currUser) => {
+      if (currUser) {
+        const userRef = doc(db, 'artifacts', appId, 'public', 'data', 'users', currUser.uid);
+        const userSnap = await getDoc(userRef);
         
-        <div id="cart-items" class="flex-1 overflow-y-auto p-6 space-y-4 custom-scrollbar">
-            <!-- Items here -->
-        </div>
+        if (userSnap.exists()) {
+          setUserProfile(userSnap.data());
+          setUser(currUser);
+        } else {
+          // New User Setup
+          const newUser = {
+            uid: currUser.uid,
+            displayName: `عضو_Doncod_${currUser.uid.slice(0, 4)}`,
+            photoURL: `https://api.dicebear.com/7.x/initials/svg?seed=${currUser.uid}&backgroundColor=4f46e5`,
+            bio: 'مرحباً بي في Doncod، حيث تلتقي الفخامة بالتواصل.',
+            links: { instagram: '', twitter: '', website: '' },
+            isVerified: true,
+            createdAt: new Date().toISOString()
+          };
+          await setDoc(userRef, newUser);
+          setUserProfile(newUser);
+          setUser(currUser);
+        }
+      } else {
+        setUser(null);
+        setUserProfile(null);
+      }
+      setIsAuthLoading(false);
+    });
+    return () => unsubscribe();
+  }, []);
 
-        <div class="p-6 bg-slate-50 border-t border-slate-100">
-            <div class="flex justify-between items-center mb-6">
-                <span class="text-slate-500 font-medium">Subtotal</span>
-                <span id="cart-total" class="text-2xl font-bold text-indigo-600">$0.00</span>
-            </div>
-            <button onclick="processCheckout()" class="w-full bg-indigo-600 text-white py-4 rounded-2xl font-bold text-lg hover:bg-indigo-700 transition-all shadow-lg shadow-indigo-100">
-                Continue to Payment
-            </button>
-            <p class="text-center text-xs text-slate-400 mt-4 italic">Delivery via Email & WhatsApp after verification</p>
-        </div>
+  // Listen to Data
+  useEffect(() => {
+    if (!user) return;
+
+    const postsRef = collection(db, 'artifacts', appId, 'public', 'data', 'posts');
+    const unsubPosts = onSnapshot(postsRef, (snap) => {
+      const data = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+      setPosts(data.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt)));
+    });
+
+    const usersRef = collection(db, 'artifacts', appId, 'public', 'data', 'users');
+    const unsubUsers = onSnapshot(usersRef, (snap) => {
+      setUsers(snap.docs.map(d => d.data()));
+    });
+
+    return () => { unsubPosts(); unsubUsers(); };
+  }, [user]);
+
+  const handleLogin = async () => {
+    setIsAuthLoading(true);
+    try {
+      if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+        await signInWithCustomToken(auth, __initial_auth_token);
+      } else {
+        await signInAnonymously(auth);
+      }
+    } catch (e) {
+      console.error(e);
+    }
+  };
+
+  const handleUpdateProfile = async (e) => {
+    e.preventDefault();
+    const form = e.target;
+    const updates = {
+      displayName: form.displayName.value,
+      bio: form.bio.value,
+      photoURL: form.photoURL.value || userProfile.photoURL,
+    };
+    
+    const userRef = doc(db, 'artifacts', appId, 'public', 'data', 'users', user.uid);
+    await updateDoc(userRef, updates);
+    setUserProfile({ ...userProfile, ...updates });
+    setIsEditing(false);
+  };
+
+  const askAI = async () => {
+    if (!inputMessage.trim()) return;
+    const msg = inputMessage;
+    setInputMessage('');
+    setChatMessages(prev => [...prev, { role: 'user', text: msg }]);
+    setIsTyping(true);
+
+    try {
+      const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${apiKey}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          contents: [{ parts: [{ text: `You are the Luxury Doncod Assistant. User says: ${msg}` }] }]
+        })
+      });
+      const data = await response.json();
+      const aiText = data.candidates?.[0]?.content?.parts?.[0]?.text || "عذراً، لم أستطع فهم ذلك.";
+      setChatMessages(prev => [...prev, { role: 'assistant', text: aiText }]);
+    } catch (err) {
+      setChatMessages(prev => [...prev, { role: 'assistant', text: "خطأ في الاتصال بالمساعد." }]);
+    } finally {
+      setIsTyping(false);
+    }
+  };
+
+  const createPost = async (e) => {
+    e.preventDefault();
+    const content = e.target.content.value;
+    if (!content) return;
+    
+    await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'posts'), {
+      userId: user.uid,
+      userName: userProfile.displayName,
+      userPhoto: userProfile.photoURL,
+      content,
+      mediaUrl: `https://picsum.photos/seed/${Math.random()}/800/800`,
+      likes: [],
+      createdAt: new Date().toISOString(),
+      isVerified: true
+    });
+    e.target.reset();
+    setActiveTab('feed');
+  };
+
+  if (isAuthLoading) return (
+    <div className="h-screen bg-slate-950 flex items-center justify-center text-white font-serif tracking-widest animate-pulse">
+      DONCOD
     </div>
+  );
 
-    <!-- Overlay -->
-    <div id="overlay" class="fixed inset-0 bg-slate-900/20 backdrop-blur-sm z-[90] hidden" onclick="toggleCart()"></div>
+  // Auth Screen
+  if (!user) return (
+    <div className="max-w-md mx-auto h-screen bg-slate-950 flex flex-col items-center justify-center p-8 text-center" dir="rtl">
+      <div className="w-24 h-24 bg-gradient-to-tr from-indigo-600 to-purple-600 rounded-3xl rotate-12 flex items-center justify-center mb-8 shadow-2xl">
+        <span className="text-4xl font-black text-white -rotate-12">D</span>
+      </div>
+      <h1 className="text-4xl font-serif font-black text-white mb-2 tracking-tighter">DONCOD</h1>
+      <p className="text-slate-400 text-sm mb-12 leading-relaxed">اكتشف عالماً من التواصل الحقيقي والفخامة الرقمية. يرجى تسجيل الدخول للبدء.</p>
+      
+      <button 
+        onClick={handleLogin}
+        className="w-full bg-indigo-600 text-white font-bold py-4 rounded-2xl hover:bg-indigo-700 transition-all flex items-center justify-center gap-3 shadow-xl shadow-indigo-900/20"
+      >
+        <Lock size={18} /> إنشاء حساب / دخول سريع
+      </button>
+      
+      <div className="mt-8 flex gap-4 opacity-50">
+        <Globe size={16} className="text-white" />
+        <CheckCircle size={16} className="text-white" />
+        <Sparkles size={16} className="text-white" />
+      </div>
+    </div>
+  );
 
-    <script>
-        // Settings & Data
-        const SETTINGS = {
-            whatsapp: "966500000000", // Replace with your number
-            currency: "$"
-        };
+  return (
+    <div className="max-w-md mx-auto h-screen bg-white flex flex-col shadow-2xl font-sans overflow-hidden border-x border-slate-100" dir="rtl">
+      {/* Header */}
+      <header className="px-6 py-4 border-b border-slate-50 flex justify-between items-center bg-white/80 backdrop-blur-xl sticky top-0 z-[60]">
+        <h1 className="text-2xl font-serif font-black text-slate-900 tracking-tighter italic">Doncod</h1>
+        <div className="flex items-center gap-4">
+          <button onClick={() => setActiveTab('chat')} className={`p-2 rounded-full transition ${activeTab === 'chat' ? 'bg-indigo-50 text-indigo-600' : 'text-slate-400'}`}>
+            <Sparkles size={22} />
+          </button>
+          <button onClick={() => setActiveTab('profile')} className="relative border-2 border-indigo-50 p-0.5 rounded-full overflow-hidden">
+            <img src={userProfile.photoURL} className="w-8 h-8 rounded-full object-cover" />
+            {userProfile.isVerified && <CheckCircle size={12} className="absolute -bottom-1 -right-1 text-blue-500 fill-white" />}
+          </button>
+        </div>
+      </header>
 
-        const products = [
-            { id: 1, name: "Premium SaaS Dashboard Template", price: 49.00, cat: "Templates", badge: "Hot", img: "https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=500" },
-            { id: 2, name: "Adobe Creative Cloud 1 Year", price: 199.00, cat: "Software", badge: "Official", img: "https://images.unsplash.com/photo-1626785774573-4b799315345d?w=500" },
-            { id: 3, name: "Custom Mobile App Design", price: 850.00, cat: "Services", badge: "Expert", img: "https://images.unsplash.com/photo-1512941937669-90a1b58e7e9c?w=500" },
-            { id: 4, name: "Xbox Game Pass Ultimate", price: 14.99, cat: "Gaming", badge: "Instant", img: "https://images.unsplash.com/photo-1605902711622-cfb43c4437b5?w=500" },
-            { id: 5, name: "Python Scripts for Automation", price: 35.00, cat: "Software", badge: "Code", img: "https://images.unsplash.com/photo-1526374965328-7f61d4dc18c5?w=500" },
-            { id: 6, name: "Minimalist Brand Identity Pack", price: 120.00, cat: "Templates", badge: "Pro", img: "https://images.unsplash.com/photo-1558655146-d09347e92766?w=500" }
-        ];
-
-        let cart = [];
-        let currentFilter = 'All';
-
-        function displayProducts() {
-            const grid = document.getElementById('products-grid');
-            const filtered = currentFilter === 'All' ? products : products.filter(p => p.cat === currentFilter);
-            
-            grid.innerHTML = filtered.map(p => `
-                <div class="product-card bg-white rounded-3xl p-4 border border-indigo-50 shadow-sm flex flex-col">
-                    <div class="relative mb-4">
-                        <img src="${p.img}" class="w-full h-48 object-cover rounded-2xl">
-                        <span class="absolute top-3 left-3 bg-white/90 backdrop-blur px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider text-indigo-600 border border-indigo-50">
-                            ${p.badge}
-                        </span>
-                    </div>
-                    <div class="px-2 flex-1 flex flex-col">
-                        <span class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">${p.cat}</span>
-                        <h3 class="font-bold text-slate-800 leading-snug mb-4">${p.name}</h3>
-                        <div class="mt-auto flex items-center justify-between">
-                            <span class="text-xl font-extrabold text-slate-900">${SETTINGS.currency}${p.price}</span>
-                            <button onclick="addToCart(${p.id})" class="p-2.5 bg-slate-900 text-white rounded-xl hover:bg-indigo-600 transition-all">
-                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-60H6"/></svg>
-                            </button>
-                        </div>
-                    </div>
+      {/* Content */}
+      <main className="flex-1 overflow-y-auto bg-slate-50/50 pb-24 custom-scrollbar">
+        {activeTab === 'feed' && (
+          <div className="p-4 space-y-6">
+            {posts.map(post => (
+              <div key={post.id} className="bg-white rounded-3xl border border-slate-100 overflow-hidden shadow-sm transition-transform active:scale-[0.98]">
+                <div className="p-4 flex items-center gap-3">
+                  <div className="relative">
+                    <img src={post.userPhoto} className="w-10 h-10 rounded-full border" />
+                    {post.isVerified && <CheckCircle size={14} className="absolute -bottom-1 -right-1 text-blue-500 fill-white" />}
+                  </div>
+                  <div>
+                    <h4 className="text-sm font-bold text-slate-900">{post.userName}</h4>
+                    <span className="text-[10px] text-slate-400 uppercase tracking-widest">{new Date(post.createdAt).toLocaleDateString('ar-SA')}</span>
+                  </div>
                 </div>
-            `).join('');
-        }
+                <img src={post.mediaUrl} className="w-full aspect-[4/5] object-cover" />
+                <div className="p-5">
+                  <div className="flex gap-5 mb-4">
+                    <button className="text-slate-800 hover:text-rose-500 transition-colors"><Heart size={26} /></button>
+                    <button className="text-slate-800 hover:text-indigo-600"><MessageCircle size={26} /></button>
+                    <button className="text-slate-800"><Share2 size={26} /></button>
+                  </div>
+                  <p className="text-sm leading-relaxed text-slate-700">
+                    <span className="font-bold ml-2 text-slate-900">{post.userName}</span>
+                    {post.content}
+                  </p>
+                </div>
+              </div>
+            ))}
+            {posts.length === 0 && (
+              <div className="py-20 text-center opacity-30">لا توجد منشورات حقيقية بعد..</div>
+            )}
+          </div>
+        )}
 
-        function filterCategory(cat) {
-            currentFilter = cat;
-            document.querySelectorAll('.category-pill').forEach(btn => {
-                btn.classList.toggle('active', btn.innerText.includes(cat));
-            });
-            displayProducts();
-        }
-
-        function addToCart(id) {
-            const product = products.find(p => p.id === id);
-            cart.push(product);
-            updateCart();
-            if(cart.length === 1) toggleCart(); // Auto open on first item
-        }
-
-        function updateCart() {
-            document.getElementById('cart-count').innerText = cart.length;
-            const itemsContainer = document.getElementById('cart-items');
-            
-            if (cart.length === 0) {
-                itemsContainer.innerHTML = `<div class="text-center py-20 text-slate-400">Empty cart</div>`;
-            } else {
-                itemsContainer.innerHTML = cart.map((item, index) => `
-                    <div class="flex gap-4 items-center bg-indigo-50/50 p-3 rounded-2xl border border-indigo-50">
-                        <img src="${item.img}" class="w-12 h-12 rounded-lg object-cover">
-                        <div class="flex-1 min-w-0">
-                            <p class="font-bold text-sm text-slate-900 truncate">${item.name}</p>
-                            <p class="text-indigo-600 text-sm font-bold">${SETTINGS.currency}${item.price}</p>
-                        </div>
-                        <button onclick="removeFromCart(${index})" class="text-red-400 hover:text-red-600">&times;</button>
+        {activeTab === 'search' && (
+          <div className="p-6">
+            <div className="relative mb-8">
+              <Search className="absolute right-4 top-4 text-slate-400" size={20} />
+              <input 
+                placeholder="البحث عن النخبة في Doncod..." 
+                className="w-full bg-white border border-slate-100 rounded-2xl py-4 pr-12 pl-4 shadow-inner outline-none focus:ring-2 focus:ring-indigo-100"
+                value={searchQuery}
+                onChange={e => setSearchQuery(e.target.value)}
+              />
+            </div>
+            <div className="space-y-4">
+              {users.filter(u => u.displayName.toLowerCase().includes(searchQuery.toLowerCase())).map(u => (
+                <div key={u.uid} className="bg-white p-4 rounded-2xl flex items-center justify-between border border-slate-50 shadow-sm">
+                  <div className="flex items-center gap-3">
+                    <img src={u.photoURL} className="w-12 h-12 rounded-full border" />
+                    <div>
+                      <p className="font-bold text-slate-900 flex items-center gap-1">{u.displayName} {u.isVerified && <CheckCircle size={14} className="text-blue-500 fill-white" />}</p>
+                      <p className="text-xs text-slate-400 truncate max-w-[150px]">{u.bio}</p>
                     </div>
-                `).join('');
-            }
+                  </div>
+                  <button className="bg-slate-900 text-white text-[10px] px-5 py-2 rounded-full font-bold uppercase tracking-widest">متابعة</button>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
 
-            const total = cart.reduce((sum, p) => sum + p.price, 0);
-            document.getElementById('cart-total').innerText = SETTINGS.currency + total.toFixed(2);
-        }
+        {activeTab === 'chat' && (
+          <div className="flex flex-col h-[calc(100vh-160px)] bg-white">
+            <div className="flex-1 overflow-y-auto p-6 space-y-6 custom-scrollbar">
+              {chatMessages.map((m, i) => (
+                <div key={i} className={`flex ${m.role === 'user' ? 'justify-end' : 'justify-start'}`}>
+                  <div className={`max-w-[85%] p-4 rounded-3xl text-sm leading-relaxed ${
+                    m.role === 'user' ? 'bg-indigo-600 text-white rounded-tl-none shadow-lg' : 'bg-slate-50 text-slate-800 rounded-tr-none border border-slate-100'
+                  }`}>
+                    {m.text}
+                  </div>
+                </div>
+              ))}
+              {isTyping && <div className="text-[10px] text-slate-400 animate-pulse">المساعد يفكر برقي...</div>}
+            </div>
+            <div className="p-4 bg-white border-t flex gap-2">
+              <input 
+                className="flex-1 bg-slate-50 rounded-2xl px-5 py-3 text-sm outline-none border border-slate-100 focus:border-indigo-300 transition"
+                placeholder="تحدث مع مساعدك الذكي..."
+                value={inputMessage}
+                onChange={e => setInputMessage(e.target.value)}
+                onKeyPress={e => e.key === 'Enter' && askAI()}
+              />
+              <button onClick={askAI} className="bg-slate-900 text-white p-3 rounded-2xl"><Send size={20} /></button>
+            </div>
+          </div>
+        )}
 
-        function removeFromCart(index) {
-            cart.splice(index, 1);
-            updateCart();
-        }
+        {activeTab === 'create' && (
+          <div className="p-8">
+            <h2 className="text-2xl font-serif font-black mb-8">إنشاء محتوى حقيقي</h2>
+            <form onSubmit={createPost} className="space-y-6">
+              <div className="bg-indigo-50/50 p-10 rounded-3xl border-2 border-indigo-100 border-dashed flex flex-col items-center justify-center text-indigo-400 hover:bg-indigo-50 transition cursor-pointer">
+                <ImageIcon size={48} className="mb-4" />
+                <span className="text-xs font-bold uppercase tracking-widest">رفع وسائط حقيقية</span>
+              </div>
+              <textarea 
+                name="content"
+                placeholder="اكتب شيئاً يليق بك..."
+                className="w-full h-40 p-5 bg-white border border-slate-100 rounded-3xl outline-none focus:ring-2 focus:ring-indigo-100 text-sm shadow-sm"
+              ></textarea>
+              <button className="w-full bg-indigo-600 text-white font-bold py-5 rounded-3xl shadow-xl shadow-indigo-100">نشر الآن</button>
+            </form>
+          </div>
+        )}
 
-        function toggleCart() {
-            const sidebar = document.getElementById('cart-sidebar');
-            const overlay = document.getElementById('overlay');
-            sidebar.classList.toggle('translate-x-full');
-            overlay.classList.toggle('hidden');
-        }
-
-        function processCheckout() {
-            if (cart.length === 0) return;
-            const total = cart.reduce((sum, p) => sum + p.price, 0);
-            let text = `New Order from Store:\n\n`;
-            cart.forEach((p, i) => text += `${i+1}. ${p.name} (${SETTINGS.currency}${p.price})\n`);
-            text += `\nTotal: ${SETTINGS.currency}${total.toFixed(2)}\n\nPlease guide me with payment.`;
+        {activeTab === 'profile' && (
+          <div className="animate-in fade-in duration-500">
+            <div className="p-8 text-center bg-white border-b border-slate-50 relative">
+               <button onClick={() => setIsEditing(true)} className="absolute top-8 left-8 p-2 bg-slate-50 text-slate-400 rounded-full"><Edit3 size={18} /></button>
+              <div className="relative inline-block mb-6">
+                <div className="w-32 h-32 rounded-full p-1 bg-gradient-to-tr from-indigo-500 to-purple-500 shadow-2xl">
+                  <img src={userProfile.photoURL} className="w-full h-full rounded-full object-cover border-4 border-white bg-slate-100" />
+                </div>
+                {userProfile.isVerified && <CheckCircle size={28} className="absolute bottom-1 right-1 text-blue-500 fill-white" />}
+              </div>
+              <h2 className="text-2xl font-serif font-black text-slate-900 mb-2">{userProfile.displayName}</h2>
+              <p className="text-slate-400 text-sm leading-relaxed max-w-[250px] mx-auto mb-6">{userProfile.bio}</p>
+              
+              <div className="grid grid-cols-3 gap-8 py-4 border-y border-slate-50">
+                <div><p className="font-black text-slate-900">0</p><p className="text-[10px] text-slate-400 uppercase">متابع</p></div>
+                <div><p className="font-black text-slate-900">{posts.filter(p => p.userId === user.uid).length}</p><p className="text-[10px] text-slate-400 uppercase">منشور</p></div>
+                <div><p className="font-black text-slate-900">0</p><p className="text-[10px] text-slate-400 uppercase">متابعة</p></div>
+              </div>
+            </div>
             
-            window.open(`https://wa.me/${SETTINGS.whatsapp}?text=${encodeURIComponent(text)}`);
-        }
+            <div className="grid grid-cols-3 gap-0.5 mt-0.5">
+              {posts.filter(p => p.userId === user.uid).map(p => (
+                <div key={p.id} className="aspect-square bg-slate-100 overflow-hidden group relative">
+                   <img src={p.mediaUrl} className="w-full h-full object-cover group-hover:scale-110 transition duration-500" />
+                   <div className="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 transition flex items-center justify-center text-white"><Heart size={20} fill="white" /></div>
+                </div>
+              ))}
+            </div>
+            
+            <div className="p-10 text-center">
+              <button onClick={() => signOut(auth)} className="text-rose-500 text-xs font-bold uppercase tracking-widest flex items-center justify-center gap-2 mx-auto"><LogOut size={16} /> تسجيل الخروج</button>
+            </div>
+          </div>
+        )}
+      </main>
 
-        window.onload = displayProducts;
-    </script>
-</body>
-</html>
+      {/* Edit Modal */}
+      {isEditing && (
+        <div className="fixed inset-0 bg-slate-950/80 backdrop-blur-md z-[100] flex items-center justify-center p-6">
+          <div className="bg-white w-full max-w-xs rounded-[40px] p-8 animate-in zoom-in-95">
+            <h3 className="text-xl font-serif font-black mb-6 text-slate-900">تعديل الملف النخبوِي</h3>
+            <form onSubmit={handleUpdateProfile} className="space-y-4">
+              <div>
+                <label className="text-[10px] font-bold text-slate-400 uppercase block mb-1">الاسم الراقي</label>
+                <input name="displayName" defaultValue={userProfile.displayName} className="w-full bg-slate-50 border-none rounded-2xl p-4 text-sm outline-none" />
+              </div>
+              <div>
+                <label className="text-[10px] font-bold text-slate-400 uppercase block mb-1">الرابط لصورتك الشخصية</label>
+                <input name="photoURL" placeholder="https://..." className="w-full bg-slate-50 border-none rounded-2xl p-4 text-sm outline-none" />
+              </div>
+              <div>
+                <label className="text-[10px] font-bold text-slate-400 uppercase block mb-1">النبذة الشخصية</label>
+                <textarea name="bio" defaultValue={userProfile.bio} className="w-full bg-slate-50 border-none rounded-2xl p-4 text-sm h-24 outline-none resize-none"></textarea>
+              </div>
+              <div className="flex gap-2 pt-4">
+                <button type="submit" className="flex-1 bg-indigo-600 text-white font-bold py-4 rounded-2xl text-xs">حفظ</button>
+                <button type="button" onClick={() => setIsEditing(false)} className="flex-1 bg-slate-100 text-slate-500 font-bold py-4 rounded-2xl text-xs">إلغاء</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Nav */}
+      <nav className="fixed bottom-0 left-0 right-0 max-w-md mx-auto bg-white/90 backdrop-blur-xl border-t border-slate-50 flex justify-around items-center py-5 z-50">
+        <button onClick={() => setActiveTab('feed')} className={activeTab === 'feed' ? 'text-indigo-600' : 'text-slate-400'}><Home size={26} /></button>
+        <button onClick={() => setActiveTab('search')} className={activeTab === 'search' ? 'text-indigo-600' : 'text-slate-400'}><Search size={26} /></button>
+        <button onClick={() => setActiveTab('create')} className="bg-slate-950 text-white p-3.5 rounded-3xl -mt-12 border-8 border-white shadow-2xl active:scale-90 transition"><PlusSquare size={26} /></button>
+        <button onClick={() => setActiveTab('chat')} className={activeTab === 'chat' ? 'text-indigo-600' : 'text-slate-400'}><MessageCircle size={26} /></button>
+        <button onClick={() => setActiveTab('profile')} className={activeTab === 'profile' ? 'text-indigo-600' : 'text-slate-400'}><User size={26} /></button>
+      </nav>
+
+      <style dangerouslySetInnerHTML={{ __html: `
+        .custom-scrollbar::-webkit-scrollbar { width: 3px; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #e2e8f0; border-radius: 10px; }
+        @keyframes zoom-in-95 { from { transform: scale(0.95); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+        .animate-in { animation: zoom-in-95 0.3s ease-out forwards; }
+      ` }} />
+    </div>
+  );
+}
