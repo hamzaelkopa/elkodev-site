@@ -175,6 +175,23 @@ footer{
 <footer>
 © ELKO.DEV — AI Digital Platform
 </footer>
+<script>
+fetch('products.json')
+.then(r=>r.json())
+.then(data=>{
+ let grid=document.querySelector("#productsGrid");
+ grid.innerHTML="";
+ data.forEach(p=>{
+   grid.innerHTML+=`
+   <div class="card">
+     <h3>${p.name}</h3>
+     <div class="price">$${p.price}</div>
+     <a class="btn" href="${p.link}">View</a>
+   </div>`;
+ });
+});
+</script>
 
 </body>
 </html>
+
