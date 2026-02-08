@@ -1,1 +1,624 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <title>elkopa | الخدمات الرقمية الفاخرة</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;600;700;900&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #00eaff;
+            --secondary: #7b4dff;
+            --bg-dark: #05060a;
+            --card-bg: rgba(255, 255, 255, 0.03);
+            --border: rgba(0, 234, 255, 0.3); 
+            --text-dim: rgba(255, 255, 255, 0.6);
+            --gold: #ffcc00;
+        }
 
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: "Cairo", sans-serif;
+            scroll-behavior: smooth;
+        }
+
+        body {
+            background: var(--bg-dark);
+            color: white;
+            overflow-x: hidden;
+            line-height: 1.6;
+        }
+
+        #bg {
+            position: fixed;
+            top: 0;
+            left: 0;
+            z-index: -1;
+            width: 100%;
+            height: 100%;
+        }
+
+        header {
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            padding: 15px 5%;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            backdrop-filter: blur(15px);
+            background: rgba(5, 6, 10, 0.8);
+            border-bottom: 2px solid var(--border); 
+        }
+
+        .logo {
+            font-size: 28px;
+            font-weight: 900;
+            background: linear-gradient(45deg, var(--primary), var(--secondary));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            text-transform: lowercase;
+            text-decoration: none;
+        }
+
+        /* Fixed Floating 3D Action Button */
+        .floating-container {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            width: 100px;
+            height: 100px;
+            z-index: 2000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .floating-contact {
+            width: 75px;
+            height: 75px;
+            cursor: pointer;
+            perspective: 1000px;
+            z-index: 2;
+            text-decoration: none;
+        }
+
+        .circle-3d {
+            width: 100%;
+            height: 100%;
+            position: relative;
+            transform-style: preserve-3d;
+            animation: rotate3d 6s linear infinite;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .circle-face {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            border: 2px solid rgba(255, 255, 255, 0.8);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            padding: 8px;
+            color: white;
+            font-weight: 800;
+            font-size: 11px;
+            box-shadow: 0 0 15px var(--primary), inset 0 0 10px rgba(255,255,255,0.3);
+            backface-visibility: hidden;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.3);
+        }
+
+        .circle-back {
+            transform: rotateY(180deg);
+            background: linear-gradient(135deg, var(--secondary), var(--primary));
+        }
+
+        .orbit {
+            position: absolute;
+            border: 1px solid rgba(0, 234, 255, 0.2);
+            border-radius: 50%;
+            animation: spinOrbit linear infinite;
+        }
+        .orbit-1 { width: 105px; height: 105px; animation-duration: 4s; }
+        .orbit-2 { width: 125px; height: 125px; animation-duration: 7s; animation-direction: reverse; }
+
+        .particle {
+            position: absolute;
+            width: 6px;
+            height: 6px;
+            background: var(--primary);
+            border-radius: 50%;
+            box-shadow: 0 0 8px var(--primary);
+        }
+
+        @keyframes rotate3d {
+            0% { transform: rotateY(0deg) rotateX(5deg); }
+            100% { transform: rotateY(360deg) rotateX(5deg); }
+        }
+
+        @keyframes spinOrbit {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+
+        .pulse-bg {
+            position: absolute;
+            width: 75px;
+            height: 75px;
+            border-radius: 50%;
+            background: var(--primary);
+            opacity: 0.3;
+            animation: pulse 2s ease-out infinite;
+            z-index: 1;
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(1); opacity: 0.4; }
+            100% { transform: scale(1.6); opacity: 0; }
+        }
+
+        /* HERO SECTION */
+        .hero {
+            position: relative;
+            text-align: center;
+            padding: 120px 20px 80px;
+            overflow: visible;
+        }
+
+        .title-container {
+            position: relative;
+            display: inline-block;
+            z-index: 10;
+        }
+
+        .hero h1 {
+            font-size: clamp(35px, 6vw, 65px);
+            font-weight: 900;
+            margin-bottom: 20px;
+            background: linear-gradient(to bottom, #fff, #aaa);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            position: relative;
+            z-index: 5;
+        }
+
+        .title-sphere {
+            position: absolute;
+            width: 25px;
+            height: 25px;
+            border-radius: 50%;
+            background: var(--primary);
+            box-shadow: 0 0 20px var(--primary), 0 0 40px var(--secondary);
+            z-index: 1;
+            filter: blur(2px);
+            animation: orbitTitle 8s linear infinite;
+        }
+
+        .sphere-2 {
+            background: var(--secondary);
+            width: 15px;
+            height: 15px;
+            animation: orbitTitle 5s linear infinite reverse;
+            animation-delay: -2s;
+        }
+
+        @keyframes orbitTitle {
+            0% { transform: rotate(0deg) translateX(180px) rotate(0deg); opacity: 1; }
+            50% { opacity: 0.5; transform: rotate(180deg) translateX(220px) rotate(-180deg); }
+            100% { transform: rotate(360deg) translateX(180px) rotate(-360deg); opacity: 1; }
+        }
+
+        .hero p {
+            max-width: 700px;
+            margin: 20px auto 0;
+            font-size: 19px;
+            color: var(--text-dim);
+            position: relative;
+            z-index: 5;
+        }
+
+        /* ABOUT SECTION */
+        .about-section {
+            padding: 80px 5%;
+            max-width: 1200px;
+            margin: 0 auto;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 50px;
+            align-items: center;
+        }
+
+        .about-text h2 {
+            font-size: 36px;
+            margin-bottom: 25px;
+            color: var(--primary);
+            border-right: 5px solid var(--primary);
+            padding-right: 15px;
+        }
+
+        .about-text p {
+            color: var(--text-dim);
+            margin-bottom: 18px;
+            font-size: 18px;
+        }
+
+        .about-visual {
+            border: 2px solid var(--border);
+            padding: 40px;
+            position: relative;
+            background: rgba(255, 255, 255, 0.02);
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+
+        .stat-item {
+            border: 1px solid var(--border);
+            padding: 25px;
+            text-align: center;
+            transition: 0.3s;
+        }
+
+        .stat-item span {
+            display: block;
+            font-size: 28px;
+            font-weight: 900;
+            color: var(--primary);
+        }
+
+        /* SERVICES SECTION */
+        .section-title {
+            text-align: center;
+            margin: 80px 0 30px;
+            font-size: 36px;
+            font-weight: 800;
+            color: white;
+        }
+
+        .categories-nav {
+            display: flex;
+            justify-content: center;
+            flex-wrap: wrap;
+            gap: 12px;
+            margin-bottom: 50px;
+            padding: 0 5%;
+            position: sticky;
+            top: 80px;
+            z-index: 90;
+            padding: 20px;
+        }
+
+        .cat-btn {
+            background: rgba(5, 6, 10, 0.8);
+            backdrop-filter: blur(10px);
+            border: 1px solid var(--border); 
+            color: white;
+            padding: 12px 30px;
+            cursor: pointer;
+            transition: 0.3s;
+            font-weight: 600;
+            border-radius: 5px;
+        }
+
+        .cat-btn.active, .cat-btn:hover {
+            background: var(--primary);
+            color: var(--bg-dark);
+            border-color: var(--primary);
+            box-shadow: 0 0 15px var(--primary);
+        }
+
+        .services-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+            gap: 25px;
+            padding: 20px 5% 80px;
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        .card {
+            background: var(--card-bg);
+            border: 1px solid var(--border); 
+            padding: 35px;
+            transition: 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            backdrop-filter: blur(10px);
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 3px;
+            background: linear-gradient(90deg, transparent, var(--primary), transparent);
+            transform: translateX(-100%);
+            transition: 0.5s;
+        }
+
+        .card:hover::before {
+            transform: translateX(100%);
+        }
+
+        .card:hover {
+            background: rgba(0, 234, 255, 0.08);
+            border-color: var(--primary);
+            transform: translateY(-10px) scale(1.02);
+        }
+
+        .card h3 {
+            color: var(--primary);
+            margin-bottom: 15px;
+            font-size: 22px;
+        }
+
+        .card p {
+            font-size: 15px;
+            color: var(--text-dim);
+            margin-bottom: 25px;
+        }
+
+        .price-tag {
+            font-size: 24px;
+            font-weight: 900;
+            margin-bottom: 20px;
+            color: white;
+            border-bottom: 2px solid var(--primary);
+            display: inline-block;
+        }
+
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            padding: 12px 25px;
+            background: transparent;
+            border: 2px solid var(--primary);
+            color: var(--primary);
+            text-decoration: none;
+            font-weight: 800;
+            transition: 0.3s;
+            cursor: pointer;
+        }
+
+        .btn:hover { 
+            background: var(--primary); 
+            color: var(--bg-dark);
+            box-shadow: 0 0 20px var(--primary);
+        }
+
+        footer {
+            background: #000;
+            border-top: 2px solid var(--border);
+            padding: 60px 5% 30px;
+            margin-top: 100px;
+        }
+
+        .footer-grid {
+            display: grid;
+            grid-template-columns: 1.5fr 1fr 1fr;
+            gap: 50px;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .footer-bottom {
+            margin-top: 50px; padding-top: 25px; border-top: 1px solid rgba(255, 255, 255, 0.1);
+            display: flex; justify-content: space-between; align-items: center; font-size: 14px; color: rgba(255, 255, 255, 0.4);
+        }
+
+        @media (max-width: 992px) {
+            .about-section { grid-template-columns: 1fr; }
+            .hero h1 { font-size: 45px; }
+            @keyframes orbitTitle {
+                0% { transform: rotate(0deg) translateX(140px); }
+                100% { transform: rotate(360deg) translateX(140px); }
+            }
+        }
+
+        @media (max-width: 768px) {
+            .floating-container { bottom: 20px; right: 20px; transform: scale(0.85); }
+            .footer-grid { grid-template-columns: 1fr; text-align: center; }
+            .categories-nav { top: 70px; }
+        }
+    </style>
+</head>
+
+<body>
+    <canvas id="bg"></canvas>
+
+    <!-- Floating Action Button -->
+    <div class="floating-container">
+        <div class="pulse-bg"></div>
+        <div class="orbit orbit-1"><div class="particle" style="top: -3px; left: 50%;"></div></div>
+        <div class="orbit orbit-2"><div class="particle" style="bottom: -3px; right: 50%; background: var(--secondary);"></div></div>
+        
+        <a href="https://wa.me/212626014697" class="floating-contact" target="_blank">
+            <div class="circle-3d">
+                <div class="circle-face">تواصل معنا</div>
+                <div class="circle-back circle-face">واتساب</div>
+            </div>
+        </a>
+    </div>
+
+    <header>
+        <a href="#" class="logo">elkopa</a>
+        <a class="btn" href="https://wa.me/212626014697">مشروع جديد</a>
+    </header>
+
+    <main>
+        <section class="hero">
+            <div class="title-container">
+                <div class="title-sphere sphere-1"></div>
+                <div class="title-sphere sphere-2"></div>
+                <h1>إبداع رقمي من قلب مراكش</h1>
+            </div>
+            <p>وكالة elkopa في العزوزية تمنحك التميز الذي تستحقه عبر حلول تقنية وتصاميم فاخرة تناسب تطلعاتك العالمية بروح مغربية أصيلة.</p>
+        </section>
+
+        <!-- About Section -->
+        <section class="about-section">
+            <div class="about-text">
+                <h2>من وراء الإبداع؟</h2>
+                <p>مرحباً بك، أنا العقل المدبر خلف <strong>elkopa</strong>. خبير شغوف بمزج فن التصميم بقوة البرمجة لخلق تجارب رقمية استثنائية.</p>
+                <p>رغم خبرتي العميقة في بناء الأنظمة والهويات البصرية، إلا أنني أؤمن أن التقنية تتطور كل ثانية؛ لذا فأنا مستمر في دراسة أحدث التقنيات العالمية لأضمن بقاء مشاريع عملائي في الصدارة.</p>
+                <a href="https://wa.me/212626014697" class="btn" style="margin-top: 15px;">ابدأ مشروعك اليوم</a>
+            </div>
+            <div class="about-visual">
+                <div class="stats-grid">
+                    <div class="stat-item"><span>+5</span><p>سنوات خبرة</p></div>
+                    <div class="stat-item"><span>+100</span><p>مشروع ناجح</p></div>
+                    <div class="stat-item"><span>24/7</span><p>دعم تقني</p></div>
+                    <div class="stat-item"><span>100%</span><p>ضمان الجودة</p></div>
+                </div>
+            </div>
+        </section>
+
+        <h2 class="section-title">كتالوج الخدمات المتكامل</h2>
+        
+        <nav class="categories-nav">
+            <button class="cat-btn active" onclick="filterServices('all', this)">الكل</button>
+            <button class="cat-btn" onclick="filterServices('web', this)">تطوير الويب</button>
+            <button class="cat-btn" onclick="filterServices('design', this)">التصميم</button>
+            <button class="cat-btn" onclick="filterServices('marketing', this)">التسويق</button>
+            <button class="cat-btn" onclick="filterServices('ai', this)">الذكاء الاصطناعي</button>
+        </nav>
+
+        <section class="services-container" id="services-grid"></section>
+    </main>
+
+    <footer>
+        <div class="footer-grid">
+            <div class="footer-section">
+                <span class="logo">elkopa</span>
+                <p style="font-size: 15px; color: var(--text-dim); margin-top: 15px;">نبتكر الحلول، نصمم المستقبل. شريكك التقني الموثوق في مراكش.</p>
+            </div>
+            <div class="footer-section">
+                <h4>تواصل سريع</h4>
+                <p style="font-size: 15px; color: var(--text-dim);">هاتف: +212 626-014697</p>
+            </div>
+            <div class="footer-section">
+                <h4>موقعنا</h4>
+                <p style="font-size: 15px; color: var(--text-dim);">المغرب، مراكش، العزوزية</p>
+            </div>
+        </div>
+        <div class="footer-bottom">
+            <p>© <script>document.write(new Date().getFullYear())</script> elkopa. جميع الحقوق محفوظة.</p>
+        </div>
+    </footer>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script>
+        const servicesData = [
+            // WEB DEVELOPMENT
+            { cat: 'web', title: "مواقع الشركات الفاخرة", desc: "تصميم موقع تعريفي احترافي يعكس فخامة علامتك التجارية.", price: "150" },
+            { cat: 'web', title: "متاجر شوبيفاي", desc: "إنشاء وتجهيز متجر شوبيفاي متكامل مع الثيمات المدفوعة.", price: "200" },
+            { cat: 'web', title: "تطوير ووردبريس", desc: "مواقع سريعة، آمنة وسهلة الإدارة باستخدام WordPress.", price: "120" },
+            { cat: 'web', title: "تطبيقات الويب (SaaS)", desc: "بناء منصات برمجية كاملة مخصصة لاحتياجات عملك.", price: "450" },
+            { cat: 'web', title: "تحسين سرعة المواقع", desc: "رفع أداء الموقع ليصل إلى 90+ على PageSpeed.", price: "60" },
+            { cat: 'web', title: "لوحات تحكم (Dashboard)", desc: "تصميم أنظمة إدارة داخلية للموظفين والبيانات.", price: "300" },
+
+            // DESIGN
+            { cat: 'design', title: "تصميم شعار (Logo)", desc: "شعار فريد يعبر عن هوية مشروعك بـ 3 نماذج أولية.", price: "80" },
+            { cat: 'design', title: "هوية بصرية كاملة", desc: "تصميم الألوان، الخطوط، والقرطاسية الكاملة للشركة.", price: "250" },
+            { cat: 'design', title: "تصميم واجهات UI/UX", desc: "دراسة وتصميم واجهات سهلة الاستخدام لتطبيقات الموبايل.", price: "180" },
+            { cat: 'design', title: "فيديو موشن جرافيك", desc: "فيديو ترويجي قصير يشرح خدماتك بشكل مبدع وجذاب.", price: "140" },
+            { cat: 'design', title: "منشورات السوشيال ميديا", desc: "حزمة تصاميم احترافية (10 منشورات) لإنستقرام وفيسبوك.", price: "90" },
+            { cat: 'design', title: "تصميم بروفايل الشركة", desc: "كتيب تعريفي (PDF) يعرض خدمات وتاريخ شركتك.", price: "110" },
+
+            // MARKETING
+            { cat: 'marketing', title: "إدارة التواصل الاجتماعي", desc: "إدارة كاملة لحساباتك مع الرد على التعليقات وجدولة المحتوى.", price: "200" },
+            { cat: 'marketing', title: "حملات إعلانية ممولة", desc: "إدارة إعلانات Meta و Google لزيادة مبيعاتك فوراً.", price: "100" },
+            { cat: 'marketing', title: "تحسين محركات البحث SEO", desc: "تصدر نتائج البحث في جوجل لجلب زوار مهتمين.", price: "150" },
+            { cat: 'marketing', title: "التسويق عبر البريد", desc: "إنشاء حملات بريدية جذابة للوصول لعملائك مباشرة.", price: "80" },
+            { cat: 'marketing', title: "كتابة المحتوى (Copywriting)", desc: "كتابة نصوص إعلانية مقنعة تزيد من رغبة العميل في الشراء.", price: "70" },
+
+            // AI
+            { cat: 'ai', title: "بوت واتساب ذكي", desc: "بوت يعمل بـ ChatGPT للرد على استفسارات العملاء 24/7.", price: "180" },
+            { cat: 'ai', title: "أتمتة العمليات", desc: "ربط التطبيقات المختلفة (Zapier) لتقليل العمل اليدوي.", price: "220" },
+            { cat: 'ai', title: "تحليل البيانات بالذكاء", desc: "استخراج رؤى من بيانات عملك لتوقع المبيعات القادمة.", price: "350" },
+            { cat: 'ai', title: "تطبيقات الذكاء التوليدي", desc: "بناء أدوات توليد صور أو نصوص مخصصة لعملك.", price: "400" }
+        ];
+
+        function filterServices(category, btn) {
+            // Update active button
+            document.querySelectorAll('.cat-btn').forEach(b => b.classList.remove('active'));
+            if(btn) btn.classList.add('active');
+
+            const grid = document.getElementById('services-grid');
+            grid.innerHTML = '';
+            
+            const filtered = category === 'all' ? servicesData : servicesData.filter(s => s.cat === category);
+            
+            filtered.forEach(s => {
+                const card = document.createElement('div');
+                card.className = 'card';
+                card.innerHTML = `
+                    <div>
+                        <h3>${s.title}</h3>
+                        <p>${s.desc}</p>
+                    </div>
+                    <div>
+                        <div class="price-tag">ابتداءً من ${s.price}$</div>
+                        <a class="btn" target="_blank" href="https://wa.me/212626014697?text=طلب خدمة: ${encodeURIComponent(s.title)}">اطلب الخدمة</a>
+                    </div>`;
+                grid.appendChild(card);
+            });
+        }
+
+        // Background Animation (Three.js)
+        let scene, camera, renderer, particlesMesh;
+        function initThree() {
+            scene = new THREE.Scene();
+            camera = new THREE.PerspectiveCamera(75, window.innerWidth/window.innerHeight, 0.1, 1000);
+            renderer = new THREE.WebGLRenderer({ canvas: document.getElementById("bg"), alpha: true, antialias: true });
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            
+            const geo = new THREE.BufferGeometry();
+            const count = 2000;
+            const arr = new Float32Array(count * 3);
+            for(let i=0; i<count*3; i++) arr[i] = (Math.random()-0.5)*15;
+            geo.setAttribute('position', new THREE.BufferAttribute(arr, 3));
+            
+            const mat = new THREE.PointsMaterial({ size: 0.007, color: 0x00eaff });
+            particlesMesh = new THREE.Points(geo, mat);
+            scene.add(particlesMesh);
+            camera.position.z = 5;
+        }
+
+        function animate() {
+            requestAnimationFrame(animate);
+            particlesMesh.rotation.y += 0.0008;
+            renderer.render(scene, camera);
+        }
+
+        window.onload = () => { 
+            initThree(); 
+            animate(); 
+            filterServices('all', document.querySelector('.cat-btn.active')); 
+        };
+
+        window.onresize = () => {
+            camera.aspect = window.innerWidth/window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        };
+    </script>
+</body>
+</html>
