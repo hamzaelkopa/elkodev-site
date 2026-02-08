@@ -3,811 +3,303 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>محترف القيادة - المعرض والمستويات</title>
+    <title>Elkopa | الفخامة في الخدمات</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;700;900&display=swap" rel="stylesheet">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Amiri:wght@400;700&family=Playfair+Display:wght@400;700&display=swap" rel="stylesheet">
     <style>
+        :root {
+            --gold: #d4af37;
+            --dark-gold: #aa8928;
+            --rich-black: #0c0c0c;
+            --soft-white: #fcfcfc;
+        }
+
         body {
-            font-family: 'Cairo', sans-serif;
-            background-color: #1a1a1a;
-            overflow: hidden;
-            user-select: none;
-            touch-action: none;
+            font-family: 'Amiri', serif;
+            background-color: var(--rich-black);
+            color: var(--soft-white);
+            margin: 0;
+            overflow-x: hidden;
         }
-        
-        #game-container {
+
+        .classic-font {
+            font-family: 'Playfair Display', serif;
+        }
+
+        .gold-gradient {
+            background: linear-gradient(135deg, #d4af37 0%, #f9f295 50%, #b38728 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .nav-link {
+            transition: all 0.3s ease;
             position: relative;
+        }
+
+        .nav-link::after {
+            content: '';
+            position: absolute;
+            width: 0;
+            height: 1px;
+            bottom: -2px;
+            right: 0;
+            background-color: var(--gold);
+            transition: width 0.3s ease;
+        }
+
+        .nav-link:hover::after {
             width: 100%;
-            height: 100vh;
-            background: #222;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
         }
 
-        canvas {
-            background: #333;
-            box-shadow: 0 0 50px rgba(0,0,0,0.5);
-            max-width: 100%;
-            height: 100%;
+        .service-card {
+            background: #151515;
+            border: 1px solid #2a2a2a;
+            transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275), border-color 0.3s;
         }
 
-        /* واجهة المستخدم واللوحات */
-        .panel {
-            position: absolute;
-            background: rgba(10, 15, 30, 0.95);
-            border: 2px solid #00d2ff;
-            border-radius: 15px;
-            padding: 20px;
-            color: white;
-            text-align: center;
-            backdrop-filter: blur(10px);
-            box-shadow: 0 0 20px rgba(0, 210, 255, 0.3);
-            display: none;
-            z-index: 20;
-            min-width: 300px;
+        .service-card:hover {
+            transform: translateY(-10px);
+            border-color: var(--gold);
         }
 
-        .active { display: block; }
-
-        .btn {
-            background: linear-gradient(45deg, #00d2ff, #007bff);
-            border: none;
-            padding: 10px 25px;
-            color: white;
+        .btn-luxury {
+            background: linear-gradient(135deg, var(--gold), var(--dark-gold));
+            color: black;
             font-weight: bold;
-            border-radius: 8px;
-            cursor: pointer;
-            margin: 10px;
-            transition: 0.3s;
-            text-shadow: 0 1px 2px rgba(0,0,0,0.3);
-            font-family: 'Cairo', sans-serif;
-        }
-        .btn:hover { transform: scale(1.05); box-shadow: 0 0 15px #00d2ff; }
-        .btn.disabled { background: #555; cursor: not-allowed; opacity: 0.7; }
-
-        /* لوحة القيادة السفلية */
-        #dashboard {
-            position: absolute;
-            bottom: 20px;
-            left: 50%;
-            transform: translateX(-50%);
-            width: 90%;
-            max-width: 600px;
-            height: 140px;
-            background: radial-gradient(circle at center, #2a2a2a, #000);
-            border-top: 4px solid #444;
-            border-radius: 40px 40px 10px 10px;
-            display: flex;
-            justify-content: space-around;
-            align-items: center;
-            box-shadow: 0 -5px 20px rgba(0,0,0,0.6);
-            z-index: 10;
-            padding: 0 20px;
+            transition: all 0.3s;
+            border: 1px solid transparent;
         }
 
-        /* العدادات */
-        .gauge {
-            width: 100px;
-            height: 100px;
-            position: relative;
-            background: conic-gradient(from 225deg, #00d2ff 0%, #ff0000 75%, transparent 75%);
-            border-radius: 50%;
-            box-shadow: inset 0 0 15px rgba(0,0,0,0.8);
+        .btn-luxury:hover {
+            background: transparent;
+            color: var(--gold);
+            border: 1px solid var(--gold);
+            transform: scale(1.05);
         }
-        .gauge-inner {
-            position: absolute;
-            top: 10px; left: 10px; right: 10px; bottom: 10px;
-            background: #111;
-            border-radius: 50%;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            color: #fff;
-        }
-        .needle {
-            position: absolute;
-            bottom: 50%;
-            left: 50%;
-            width: 4px;
-            height: 40%;
-            background: red;
-            transform-origin: bottom center;
-            transform: rotate(-135deg);
-            transition: transform 0.1s;
-            border-radius: 2px;
-            z-index: 2;
-        }
-        .gauge-label { font-size: 10px; color: #888; margin-top: 5px; }
-        .gauge-value { font-size: 18px; font-weight: bold; font-family: monospace; }
 
-        /* تفاصيل المعرض */
-        .car-card {
-            background: rgba(255,255,255,0.1);
+        .hero-overlay {
+            background: rgba(0, 0, 0, 0.7);
+        }
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #0c0c0c;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: var(--gold);
             border-radius: 10px;
-            padding: 10px;
-            margin: 5px;
-            cursor: pointer;
-            border: 2px solid transparent;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
         }
-        .car-card.selected { border-color: #00d2ff; background: rgba(0, 210, 255, 0.2); }
-        .car-preview {
-            width: 40px; height: 60px; border-radius: 5px;
-        }
-
-        /* مؤشر المستوى */
-        #level-indicator {
-            position: absolute;
-            top: 20px;
-            left: 20px;
-            background: rgba(0,0,0,0.7);
-            padding: 10px 20px;
-            border-radius: 30px;
-            color: #ffd700;
-            font-weight: bold;
-            border: 2px solid #ffd700;
-            z-index: 10;
-        }
-        
-        #score-display {
-            position: absolute;
-            top: 20px;
-            right: 20px;
-            background: rgba(0,0,0,0.7);
-            padding: 10px 20px;
-            border-radius: 30px;
-            color: #00d2ff;
-            font-weight: bold;
-            border: 2px solid #00d2ff;
-            z-index: 10;
-        }
-
-        /* أزرار اللمس */
-        .touch-controls {
-            position: absolute;
-            bottom: 180px;
-            width: 100%;
-            display: flex;
-            justify-content: space-between;
-            padding: 0 30px;
-            z-index: 15;
-            opacity: 0.6;
-        }
-        .t-btn {
-            width: 70px; height: 70px;
-            background: rgba(255,255,255,0.2);
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 30px;
-            color: white;
-            border: 2px solid white;
-        }
-
-        /* رسائل النظام */
-        #msg-toast {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            background: rgba(0,0,0,0.8);
-            color: white;
-            padding: 15px 30px;
-            border-radius: 10px;
-            opacity: 0;
-            transition: opacity 0.5s;
-            pointer-events: none;
-            z-index: 100;
-            font-size: 1.2rem;
-            text-align: center;
-        }
-
-        /* إخفاء لوحة التحكم في القوائم */
-        .hidden-dashboard { opacity: 0; pointer-events: none; }
     </style>
 </head>
 <body>
 
-<div id="game-container">
-    <canvas id="gameCanvas"></canvas>
-
-    <!-- UI: HUD -->
-    <div id="level-indicator">المستوى: <span id="lvl-val">1</span></div>
-    <div id="score-display">المال: <span id="score-val">0</span> $</div>
-
-    <!-- UI: Dashboard -->
-    <div id="dashboard" class="transition-opacity duration-500">
-        <!-- RPM / Gear -->
-        <div style="text-align: center; color: #555;">
-            <div style="font-size: 24px; font-weight: 900; color: #fff; text-shadow: 0 0 10px white;">D</div>
-            <div style="font-size: 12px;">GEAR</div>
-        </div>
-
-        <!-- Speedometer -->
-        <div class="gauge">
-            <div class="needle" id="speed-needle"></div>
-            <div class="gauge-inner">
-                <span class="gauge-value" id="speed-val">0</span>
-                <span class="gauge-label">KM/H</span>
-            </div>
-        </div>
-
-        <!-- Health/Fuel -->
-        <div class="w-24">
-            <div class="text-xs text-gray-400 mb-1 flex justify-between">
-                <span>الصحة</span>
-                <span id="health-val">100%</span>
-            </div>
-            <div class="w-full bg-gray-700 h-2 rounded-full overflow-hidden">
-                <div id="health-bar" class="h-full bg-green-500 transition-all duration-300" style="width: 100%"></div>
-            </div>
-            <div class="text-xs text-gray-400 mt-2 mb-1 flex justify-between">
-                <span>التقدم</span>
-                <span id="progress-val">0%</span>
-            </div>
-            <div class="w-full bg-gray-700 h-2 rounded-full overflow-hidden">
-                <div id="progress-bar" class="h-full bg-blue-500 transition-all duration-300" style="width: 0%"></div>
-            </div>
-        </div>
-    </div>
-
-    <!-- UI: Main Menu -->
-    <div id="main-menu" class="panel active">
-        <h1 class="text-4xl font-black mb-4 text-blue-400">محترف القيادة</h1>
-        <p class="mb-6 text-gray-300">اجمع النقود، اشترِ سيارات، وتجنب الحوادث!</p>
-        <button class="btn w-full" onclick="game.openShowroom()">معرض السيارات</button>
-        <button class="btn w-full" onclick="game.start()">ابدأ اللعب</button>
-    </div>
-
-    <!-- UI: Showroom -->
-    <div id="showroom" class="panel">
-        <h2 class="text-2xl font-bold mb-4 text-yellow-400">معرض السيارات</h2>
-        <div class="text-right mb-2">رصيدك: <span class="text-green-400" id="shop-balance">0</span> $</div>
-        <div id="cars-list" class="max-h-60 overflow-y-auto mb-4 custom-scroll text-right">
-            <!-- Cars generated by JS -->
-        </div>
-        <button class="btn bg-gray-600 hover:bg-gray-500" onclick="game.closeShowroom()">عودة للقائمة</button>
-    </div>
-
-    <!-- UI: Game Over / Level Complete -->
-    <div id="game-over" class="panel">
-        <h2 id="go-title" class="text-3xl font-bold mb-2">انتهت اللعبة!</h2>
-        <p id="go-msg" class="mb-4">تحطمت سيارتك.</p>
-        <p class="text-xl mb-4">المال المجمع: <span id="go-score" class="text-green-400">0</span></p>
-        <button id="next-lvl-btn" class="btn hidden" onclick="game.nextLevel()">المستوى التالي</button>
-        <button class="btn" onclick="game.returnHome()">القائمة الرئيسية</button>
-    </div>
-
-    <!-- Touch Controls (Mobile) -->
-    <div class="touch-controls md:hidden" id="touch-ui" style="display:none;">
-        <div class="t-btn" ontouchstart="input.left=true" ontouchend="input.left=false">◄</div>
-        <div class="t-btn" ontouchstart="input.right=true" ontouchend="input.right=false">►</div>
-    </div>
-
-    <!-- Message Toast -->
-    <div id="msg-toast">رسالة</div>
-</div>
-
-<script>
-/**
- * Game Configuration & State
- */
-const canvas = document.getElementById('gameCanvas');
-const ctx = canvas.getContext('2d');
-
-// Game constants
-const LANE_WIDTH = 60; // Base lane width, scaled later
-const ROAD_WIDTH_PCT = 0.8; // Road takes 80% of screen
-
-// State Variables
-let gameState = {
-    running: false,
-    level: 1,
-    money: 0,
-    currentCarIndex: 0,
-    scoreInLevel: 0,
-    distance: 0,
-    health: 100,
-    speed: 0,
-    maxDistance: 1000 // Distance required to pass level
-};
-
-// Available Cars Database
-const CARS_DB = [
-    { id: 0, name: "كلاسيك", price: 0, color: "#e74c3c", speedFactor: 1.0, handling: 1.0, width: 40, height: 70 },
-    { id: 1, name: "رياضية زرقاء", price: 500, color: "#3498db", speedFactor: 1.2, handling: 1.2, width: 42, height: 72 },
-    { id: 2, name: "الوحش الأخضر", price: 1500, color: "#2ecc71", speedFactor: 1.4, handling: 1.3, width: 45, height: 75 },
-    { id: 3, name: "البرق الذهبي", price: 3000, color: "#f1c40f", speedFactor: 1.6, handling: 1.5, width: 42, height: 72 },
-    { id: 4, name: "الشبح الأسود", price: 5000, color: "#111111", stripe: "#333", speedFactor: 1.8, handling: 1.8, width: 44, height: 74 }
-];
-
-let unlockedCars = [0]; // Store IDs of unlocked cars
-
-// Entities
-let player = { x: 0, y: 0, width: 40, height: 70, lane: 1 };
-let obstacles = [];
-let coins = [];
-let particles = [];
-let roadOffset = 0;
-
-// Input Handling
-const input = { left: false, right: false, up: false, down: false };
-
-/**
- * Initialization & Resizing
- */
-function resize() {
-    canvas.width = window.innerWidth;
-    canvas.height = window.innerHeight;
-    // Reset player position on resize
-    player.x = canvas.width / 2;
-    player.y = canvas.height - 150;
-}
-window.addEventListener('resize', resize);
-resize();
-
-// Input Listeners
-window.addEventListener('keydown', (e) => {
-    if(e.key === 'ArrowLeft' || e.key === 'a') input.left = true;
-    if(e.key === 'ArrowRight' || e.key === 'd') input.right = true;
-    if(e.key === 'ArrowUp' || e.key === 'w') input.up = true;
-    if(e.key === 'ArrowDown' || e.key === 's') input.down = true;
-});
-window.addEventListener('keyup', (e) => {
-    if(e.key === 'ArrowLeft' || e.key === 'a') input.left = false;
-    if(e.key === 'ArrowRight' || e.key === 'd') input.right = false;
-    if(e.key === 'ArrowUp' || e.key === 'w') input.up = false;
-    if(e.key === 'ArrowDown' || e.key === 's') input.down = false;
-});
-
-/**
- * Game Logic Class
- */
-const game = {
-    start: function() {
-        if (gameState.health <= 0) gameState.health = 100; // Reset health if died
-        
-        document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
-        document.getElementById('dashboard').classList.remove('hidden-dashboard');
-        
-        // Show touch controls if mobile
-        if(window.innerWidth < 768) document.getElementById('touch-ui').style.display = 'flex';
-
-        gameState.running = true;
-        gameState.distance = 0;
-        gameState.scoreInLevel = 0;
-        gameState.speed = 0;
-        
-        // Reset Entities
-        obstacles = [];
-        coins = [];
-        particles = [];
-        
-        // Difficulty based on level
-        gameState.maxDistance = 1000 + (gameState.level * 500);
-
-        gameLoop();
-    },
-
-    openShowroom: function() {
-        document.getElementById('main-menu').classList.remove('active');
-        document.getElementById('showroom').classList.add('active');
-        this.renderShop();
-    },
-
-    closeShowroom: function() {
-        document.getElementById('showroom').classList.remove('active');
-        document.getElementById('main-menu').classList.add('active');
-    },
-
-    renderShop: function() {
-        const list = document.getElementById('cars-list');
-        document.getElementById('shop-balance').innerText = gameState.money;
-        list.innerHTML = '';
-
-        CARS_DB.forEach((car) => {
-            const isUnlocked = unlockedCars.includes(car.id);
-            const isSelected = gameState.currentCarIndex === car.id;
+    <!-- Header / Navigation -->
+    <header class="fixed w-full top-0 z-50 bg-black/90 border-b border-gold/20 backdrop-blur-md">
+        <div class="container mx-auto px-6 py-4 flex justify-between items-center">
+            <div class="text-3xl font-bold classic-font tracking-widest gold-gradient">ELKOPA</div>
             
-            const div = document.createElement('div');
-            div.className = `car-card ${isSelected ? 'selected' : ''}`;
-            div.onclick = () => this.selectOrBuyCar(car.id);
+            <nav class="hidden md:flex space-x-8 space-x-reverse text-lg">
+                <a href="#" class="nav-link">الرئيسية</a>
+                <a href="#services" class="nav-link">الخدمات</a>
+                <a href="#categories" class="nav-link">الفئات</a>
+                <a href="#" class="nav-link">من نحن</a>
+            </nav>
 
-            // Car Preview (Mini Canvas logic simplified to CSS/HTML for list)
-            let btnText = isUnlocked ? (isSelected ? 'مستخدم' : 'اختر') : `شراء ${car.price}$`;
-            let btnClass = isUnlocked ? 'bg-blue-600' : (gameState.money >= car.price ? 'bg-green-600' : 'bg-gray-600 disabled');
+            <div class="flex items-center space-x-6 space-x-reverse">
+                <div class="relative cursor-pointer group">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-7 w-7 text-gold" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
+                    </svg>
+                    <span class="absolute -top-2 -right-2 bg-gold text-black text-xs rounded-full h-5 w-5 flex items-center justify-center font-bold">0</span>
+                </div>
+                <button class="md:hidden text-gold">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16m-7 6h7" />
+                    </svg>
+                </button>
+            </div>
+        </div>
+    </header>
 
-            div.innerHTML = `
-                <div style="display:flex; align-items:center; gap:10px;">
-                    <div class="car-preview" style="background-color: ${car.color}; box-shadow: 0 0 10px ${car.color}"></div>
-                    <div>
-                        <div class="font-bold">${car.name}</div>
-                        <div class="text-xs text-gray-400">سرعة: ${car.speedFactor}x | تحكم: ${car.handling}x</div>
+    <!-- Hero Section -->
+    <section class="relative h-screen flex items-center justify-center text-center px-4 overflow-hidden">
+        <div class="absolute inset-0 z-0">
+            <img src="https://images.unsplash.com/photo-1497366216548-37526070297c?auto=format&fit=crop&q=80&w=2000" alt="Luxury Background" class="w-full h-full object-cover opacity-40">
+            <div class="absolute inset-0 hero-overlay"></div>
+        </div>
+        
+        <div class="relative z-10 max-w-4xl">
+            <h2 class="text-gold uppercase tracking-[0.3em] mb-4 text-sm md:text-base animate-pulse">مرحباً بك في عالم الفخامة</h2>
+            <h1 class="text-5xl md:text-8xl classic-font mb-8 leading-tight">متجر ELKOPA<br><span class="gold-gradient">لأرقى الخدمات</span></h1>
+            <p class="text-gray-300 text-lg md:text-xl mb-10 max-w-2xl mx-auto leading-relaxed">
+                نقدم لك مجموعة متكاملة من الخدمات المصممة خصيصاً لتلبية تطلعاتك، بجودة تفوق التوقعات وبلمسة كلاسيكية فاخرة.
+            </p>
+            <div class="flex flex-col md:flex-row justify-center gap-6">
+                <a href="#services" class="btn-luxury px-12 py-4 rounded-full text-lg shadow-lg shadow-gold/20">اكتشف خدماتنا</a>
+                <a href="#categories" class="border border-gold text-gold px-12 py-4 rounded-full text-lg hover:bg-gold hover:text-black transition-all">الفئات المختارة</a>
+            </div>
+        </div>
+    </section>
+
+    <!-- Categories Section -->
+    <section id="categories" class="py-20 bg-[#080808]">
+        <div class="container mx-auto px-6">
+            <div class="text-center mb-16">
+                <h3 class="classic-font text-4xl mb-2">فئاتنا المميزة</h3>
+                <div class="w-24 h-1 bg-gold mx-auto"></div>
+            </div>
+            
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-6">
+                <div class="text-center group cursor-pointer">
+                    <div class="aspect-square bg-[#111] border border-gold/10 flex items-center justify-center mb-4 overflow-hidden rounded-lg">
+                        <img src="https://images.unsplash.com/photo-1460925895917-afdab827c52f?auto=format&fit=crop&q=80&w=500" class="w-full h-full object-cover opacity-50 group-hover:scale-110 transition-transform duration-700" alt="Marketing">
+                    </div>
+                    <h4 class="text-gold font-bold">التسويق الفاخر</h4>
+                </div>
+                <div class="text-center group cursor-pointer">
+                    <div class="aspect-square bg-[#111] border border-gold/10 flex items-center justify-center mb-4 overflow-hidden rounded-lg">
+                        <img src="https://images.unsplash.com/photo-1551434678-e076c223a692?auto=format&fit=crop&q=80&w=500" class="w-full h-full object-cover opacity-50 group-hover:scale-110 transition-transform duration-700" alt="Consulting">
+                    </div>
+                    <h4 class="text-gold font-bold">الاستشارات</h4>
+                </div>
+                <div class="text-center group cursor-pointer">
+                    <div class="aspect-square bg-[#111] border border-gold/10 flex items-center justify-center mb-4 overflow-hidden rounded-lg">
+                        <img src="https://images.unsplash.com/photo-1512314889357-e157c22f938d?auto=format&fit=crop&q=80&w=500" class="w-full h-full object-cover opacity-50 group-hover:scale-110 transition-transform duration-700" alt="Design">
+                    </div>
+                    <h4 class="text-gold font-bold">التصميم الإبداعي</h4>
+                </div>
+                <div class="text-center group cursor-pointer">
+                    <div class="aspect-square bg-[#111] border border-gold/10 flex items-center justify-center mb-4 overflow-hidden rounded-lg">
+                        <img src="https://images.unsplash.com/photo-1454165833767-027ffea9e77b?auto=format&fit=crop&q=80&w=500" class="w-full h-full object-cover opacity-50 group-hover:scale-110 transition-transform duration-700" alt="Management">
+                    </div>
+                    <h4 class="text-gold font-bold">إدارة الأعمال</h4>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Services Section -->
+    <section id="services" class="py-24">
+        <div class="container mx-auto px-6">
+            <div class="flex flex-col md:flex-row justify-between items-end mb-16">
+                <div>
+                    <h2 class="text-gold tracking-widest uppercase text-sm mb-4">قائمة الخدمات</h2>
+                    <h3 class="text-5xl classic-font">اختر الخدمة التي تليق بك</h3>
+                </div>
+                <p class="text-gray-400 mt-4 md:mt-0 max-w-sm">
+                    كل خدمة نقدمها هي رحلة نحو التميز، نعتني بأدق التفاصيل لضمان رضاكم الدائم.
+                </p>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-10" id="servicesContainer">
+                <!-- Services will be injected by JS or hardcoded here -->
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="bg-black border-t border-gold/20 py-16">
+        <div class="container mx-auto px-6 text-center">
+            <div class="text-4xl font-bold classic-font gold-gradient mb-8">ELKOPA</div>
+            <p class="text-gray-500 max-w-md mx-auto mb-10">
+                وجهتكم الأولى للخدمات الفاخرة التي تجمع بين الأصالة والاحترافية.
+            </p>
+            <div class="flex justify-center space-x-6 space-x-reverse mb-10 text-gold">
+                <a href="#" class="hover:text-white transition">واتساب</a>
+                <a href="#" class="hover:text-white transition">إنستغرام</a>
+                <a href="#" class="hover:text-white transition">تويتر</a>
+            </div>
+            <div class="text-gray-600 text-sm">
+                &copy; 2024 جميع الحقوق محفوظة لمتجر Elkopa. صمم بكل فخامة.
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        const services = [
+            {
+                title: "تصميم الهويات البصرية",
+                description: "نبتكر شعارات وهويات تعكس فخامة علامتك التجارية وتترك انطباعاً لا ينسى.",
+                image: "https://images.unsplash.com/photo-1626785774573-4b799315345d?auto=format&fit=crop&q=80&w=600",
+                price: "تبدأ من 500$"
+            },
+            {
+                title: "التسويق الرقمي الفاخر",
+                description: "حملات إعلانية مدروسة تستهدف النخبة لزيادة مبيعاتك وتعزيز تواجدك.",
+                image: "https://images.unsplash.com/photo-1460925895917-afdab827c52f?auto=format&fit=crop&q=80&w=600",
+                price: "حسب الخطة"
+            },
+            {
+                title: "تطوير المواقع الحصرية",
+                description: "تصميم وبرمجة مواقع ويب سريعة، آمنة، وفخمة تتناسب مع مستوى أعمالك.",
+                image: "https://images.unsplash.com/photo-1547658719-da2b51169166?auto=format&fit=crop&q=80&w=600",
+                price: "تبدأ من 1200$"
+            },
+            {
+                title: "استشارات إدارة الأعمال",
+                description: "حلول إستراتيجية لتطوير هيكلية شركتك وضمان النمو المستدام لمشاريعك.",
+                image: "https://images.unsplash.com/photo-1551836022-d5d88e9218df?auto=format&fit=crop&q=80&w=600",
+                price: "استشارة مجانية"
+            },
+            {
+                title: "إدارة التواصل الاجتماعي",
+                description: "صناعة محتوى إبداعي وإدارة كاملة لحساباتك بأسلوب راقٍ واحترافي.",
+                image: "https://images.unsplash.com/photo-1611162617474-5b21e879e113?auto=format&fit=crop&q=80&w=600",
+                price: "شهرياً 300$"
+            },
+            {
+                title: "كتابة المحتوى الإبداعي",
+                description: "صياغة نصوص بيعية ومحتوى حصري يعبر عن قيم علامتك التجارية بدقة.",
+                image: "https://images.unsplash.com/photo-1455390582262-044cdead277a?auto=format&fit=crop&q=80&w=600",
+                price: "تبدأ من 100$"
+            }
+        ];
+
+        const servicesContainer = document.getElementById('servicesContainer');
+        const phoneNumber = "212626014697";
+
+        services.forEach(service => {
+            const encodedMsg = encodeURIComponent(`مرحباً متجر Elkopa، أود الاستفسار عن خدمة: ${service.title}`);
+            const whatsappLink = `https://wa.me/${phoneNumber}?text=${encodedMsg}`;
+
+            const card = `
+                <div class="service-card rounded-xl overflow-hidden shadow-2xl group">
+                    <div class="h-64 overflow-hidden">
+                        <img src="${service.image}" alt="${service.title}" class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500 opacity-80">
+                    </div>
+                    <div class="p-8">
+                        <div class="flex justify-between items-start mb-4">
+                            <h4 class="text-2xl font-bold classic-font text-white">${service.title}</h4>
+                            <span class="text-gold text-sm font-bold">${service.price}</span>
+                        </div>
+                        <p class="text-gray-400 mb-8 leading-relaxed">
+                            ${service.description}
+                        </p>
+                        <a href="${whatsappLink}" target="_blank" class="btn-luxury block w-full text-center py-4 rounded-lg">
+                            اطلب الخدمة الآن
+                        </a>
                     </div>
                 </div>
-                <div class="px-3 py-1 rounded text-xs text-white ${btnClass}">
-                    ${btnText}
-                </div>
             `;
-            list.appendChild(div);
+            servicesContainer.innerHTML += card;
         });
-    },
 
-    selectOrBuyCar: function(id) {
-        const car = CARS_DB[id];
-        if (unlockedCars.includes(id)) {
-            gameState.currentCarIndex = id;
-            this.showToast("تم اختيار السيارة");
-            this.renderShop();
-        } else {
-            if (gameState.money >= car.price) {
-                gameState.money -= car.price;
-                unlockedCars.push(id);
-                gameState.currentCarIndex = id;
-                this.showToast("تم الشراء بنجاح!");
-                this.renderShop();
-                // Save logic usually goes here
-            } else {
-                this.showToast("رصيدك غير كافي");
-            }
-        }
-    },
-
-    gameOver: function(win) {
-        gameState.running = false;
-        document.getElementById('dashboard').classList.add('hidden-dashboard');
-        document.getElementById('touch-ui').style.display = 'none';
-        
-        const panel = document.getElementById('game-over');
-        panel.classList.add('active');
-        
-        document.getElementById('go-score').innerText = gameState.scoreInLevel + " $";
-        
-        // Add level score to total wallet
-        gameState.money += gameState.scoreInLevel;
-        document.getElementById('score-val').innerText = gameState.money;
-
-        if (win) {
-            document.getElementById('go-title').innerText = "أحسنت! اكتمل المستوى";
-            document.getElementById('go-title').style.color = "#00ff00";
-            document.getElementById('go-msg').innerText = "لقد وصلت إلى خط النهاية بأمان.";
-            document.getElementById('next-lvl-btn').classList.remove('hidden');
-        } else {
-            document.getElementById('go-title').innerText = "تحطمت السيارة!";
-            document.getElementById('go-title').style.color = "#ff0000";
-            document.getElementById('go-msg').innerText = "حاول مرة أخرى لتجاوز المستوى.";
-            document.getElementById('next-lvl-btn').classList.add('hidden');
-            gameState.health = 100; // Reset health for retry
-        }
-    },
-
-    nextLevel: function() {
-        gameState.level++;
-        document.getElementById('lvl-val').innerText = gameState.level;
-        this.start();
-    },
-
-    returnHome: function() {
-        document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
-        document.getElementById('main-menu').classList.add('active');
-    },
-
-    showToast: function(text) {
-        const t = document.getElementById('msg-toast');
-        t.innerText = text;
-        t.style.opacity = 1;
-        setTimeout(() => t.style.opacity = 0, 2000);
-    }
-};
-
-/**
- * Rendering & Physics Helpers
- */
-function drawCar(x, y, carType, angle = 0) {
-    ctx.save();
-    ctx.translate(x, y);
-    ctx.rotate(angle);
-
-    const car = CARS_DB[carType];
-    const w = car.width;
-    const h = car.height;
-
-    // Shadow
-    ctx.fillStyle = 'rgba(0,0,0,0.5)';
-    ctx.fillRect(-w/2 + 5, -h/2 + 5, w, h);
-
-    // Body
-    ctx.fillStyle = car.color;
-    // Rounded rect body
-    ctx.beginPath();
-    ctx.roundRect(-w/2, -h/2, w, h, 8);
-    ctx.fill();
-
-    // Stripe (if any)
-    if(car.stripe) {
-        ctx.fillStyle = car.stripe;
-        ctx.fillRect(-5, -h/2, 10, h);
-    }
-
-    // Roof / Windshield
-    ctx.fillStyle = '#222'; // Dark glass
-    ctx.beginPath();
-    ctx.roundRect(-w/2 + 4, -h/2 + 15, w - 8, h - 25, 5);
-    ctx.fill();
-
-    // Headlights
-    ctx.fillStyle = '#ffeb3b';
-    ctx.shadowColor = '#ffeb3b';
-    ctx.shadowBlur = 10;
-    ctx.beginPath();
-    ctx.arc(-w/2 + 5, -h/2 + 2, 4, 0, Math.PI * 2);
-    ctx.arc(w/2 - 5, -h/2 + 2, 4, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.shadowBlur = 0;
-
-    // Taillights
-    ctx.fillStyle = '#ff0000';
-    ctx.shadowColor = '#ff0000';
-    ctx.shadowBlur = 10;
-    ctx.beginPath();
-    ctx.rect(-w/2 + 4, h/2 - 4, 8, 4);
-    ctx.rect(w/2 - 12, h/2 - 4, 8, 4);
-    ctx.fill();
-    ctx.shadowBlur = 0;
-
-    ctx.restore();
-}
-
-function drawRoad() {
-    const roadW = canvas.width * ROAD_WIDTH_PCT;
-    const leftX = (canvas.width - roadW) / 2;
-    const rightX = leftX + roadW;
-
-    // Grass
-    ctx.fillStyle = '#0a2e0a';
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-    // Road
-    ctx.fillStyle = '#333';
-    ctx.fillRect(leftX, 0, roadW, canvas.height);
-
-    // Shoulders
-    ctx.strokeStyle = '#fff';
-    ctx.lineWidth = 4;
-    ctx.beginPath();
-    ctx.moveTo(leftX, 0); ctx.lineTo(leftX, canvas.height);
-    ctx.moveTo(rightX, 0); ctx.lineTo(rightX, canvas.height);
-    ctx.stroke();
-
-    // Lane Markers (Moving)
-    ctx.strokeStyle = 'rgba(255, 255, 255, 0.5)';
-    ctx.lineWidth = 2;
-    ctx.setLineDash([30, 30]);
-    ctx.lineDashOffset = -roadOffset;
-    
-    // Draw 3 lanes (2 dividers)
-    const laneW = roadW / 3;
-    ctx.beginPath();
-    ctx.moveTo(leftX + laneW, 0); ctx.lineTo(leftX + laneW, canvas.height);
-    ctx.moveTo(leftX + laneW * 2, 0); ctx.lineTo(leftX + laneW * 2, canvas.height);
-    ctx.stroke();
-    ctx.setLineDash([]);
-}
-
-function updateDashboard() {
-    // Speedometer
-    const speedPct = Math.min(gameState.speed / 25, 1); // Max visual speed at 25 unit
-    const angle = -135 + (speedPct * 270);
-    document.getElementById('speed-needle').style.transform = `rotate(${angle}deg)`;
-    document.getElementById('speed-val').innerText = Math.floor(gameState.speed * 10);
-    
-    // Health
-    const hpEl = document.getElementById('health-bar');
-    hpEl.style.width = gameState.health + "%";
-    hpEl.className = `h-full transition-all duration-300 ${gameState.health < 30 ? 'bg-red-600' : 'bg-green-500'}`;
-    document.getElementById('health-val').innerText = Math.floor(gameState.health) + "%";
-
-    // Progress
-    const prog = Math.min((gameState.distance / gameState.maxDistance) * 100, 100);
-    document.getElementById('progress-bar').style.width = prog + "%";
-    document.getElementById('progress-val').innerText = Math.floor(prog) + "%";
-}
-
-/**
- * Main Loop
- */
-function gameLoop() {
-    if (!gameState.running) return;
-
-    // Clear
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-    const carStats = CARS_DB[gameState.currentCarIndex];
-    const maxSpeed = 15 + (gameState.level * 2); // Base speed increases with level
-    
-    // Player movement
-    if (input.up) gameState.speed += 0.5 * carStats.speedFactor;
-    if (input.down) gameState.speed -= 0.5;
-    else gameState.speed *= 0.98; // Friction
-
-    // Cap speed
-    if (gameState.speed > maxSpeed * carStats.speedFactor) gameState.speed = maxSpeed * carStats.speedFactor;
-    if (gameState.speed < 0) gameState.speed = 0;
-
-    // Steering
-    const turnSpeed = 5 * carStats.handling * (gameState.speed / 10); // Turn harder when moving
-    if (input.left && gameState.speed > 1) player.x -= turnSpeed;
-    if (input.right && gameState.speed > 1) player.x += turnSpeed;
-
-    // Bounds check
-    const roadW = canvas.width * ROAD_WIDTH_PCT;
-    const leftBound = (canvas.width - roadW) / 2 + 30;
-    const rightBound = (canvas.width + roadW) / 2 - 30;
-    
-    if (player.x < leftBound) { player.x = leftBound; gameState.health -= 0.5; }
-    if (player.x > rightBound) { player.x = rightBound; gameState.health -= 0.5; }
-
-    // Road Movement
-    roadOffset += gameState.speed;
-    gameState.distance += gameState.speed / 10;
-    
-    // Win Condition
-    if (gameState.distance >= gameState.maxDistance) {
-        game.gameOver(true);
-        return;
-    }
-
-    // Death Condition
-    if (gameState.health <= 0) {
-        game.gameOver(false);
-        return;
-    }
-
-    // Spawn Obstacles & Coins
-    // Chance increases with speed and level
-    const spawnRate = 0.02 + (gameState.level * 0.005);
-    if (Math.random() < spawnRate && gameState.speed > 5) {
-        const lane = Math.floor(Math.random() * 3);
-        const laneW = roadW / 3;
-        const oX = (canvas.width - roadW) / 2 + (lane * laneW) + (laneW/2);
-        
-        // 70% chance obstacle, 30% coin
-        const type = Math.random() > 0.3 ? 'obstacle' : 'coin';
-        
-        obstacles.push({
-            x: oX,
-            y: -100,
-            type: type,
-            speed: type === 'obstacle' ? (Math.random() * 5 + 5) : 0, // Other cars move too
-            color: type === 'obstacle' ? `hsl(${Math.random()*360}, 50%, 50%)` : 'gold'
+        // Smooth Scroll for links
+        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+            anchor.addEventListener('click', function (e) {
+                e.preventDefault();
+                document.querySelector(this.getAttribute('href')).scrollIntoView({
+                    behavior: 'smooth'
+                });
+            });
         });
-    }
+    </script>
 
-    // Draw World
-    drawRoad();
-
-    // Draw & Update Entities
-    for (let i = obstacles.length - 1; i >= 0; i--) {
-        let obs = obstacles[i];
-        
-        // Move entity down (relative to player speed + its own speed)
-        // If it's a car (obstacle), it moves slower than player usually, appearing to come towards us if we are fast,
-        // or moving away if we are slow. To simplify: everything moves down based on player speed.
-        // Static coins move down at player speed. Cars move down at (playerSpeed - carSpeed).
-        
-        let relSpeed = gameState.speed;
-        if(obs.type === 'obstacle') relSpeed = gameState.speed - 3; // Traffic moves forward slowly
-        
-        obs.y += relSpeed;
-
-        // Draw
-        if (obs.type === 'obstacle') {
-            // It's another car, pick a random car ID look (visual only)
-            // Using a simple distinct color box for enemy
-            drawCar(obs.x, obs.y, 0, 0); // Reuse car draw logic with default shape
-            // Overwrite color for variety
-            ctx.fillStyle = obs.color;
-            ctx.beginPath();
-            ctx.roundRect(obs.x - 20, obs.y - 35, 40, 70, 8);
-            ctx.fill();
-        } else {
-            // Coin
-            ctx.fillStyle = '#ffd700';
-            ctx.beginPath();
-            ctx.arc(obs.x, obs.y, 15, 0, Math.PI * 2);
-            ctx.fill();
-            ctx.strokeStyle = '#fff';
-            ctx.lineWidth = 2;
-            ctx.stroke();
-            ctx.fillStyle = '#000';
-            ctx.font = '20px Arial';
-            ctx.fillText('$', obs.x - 6, obs.y + 7);
-        }
-
-        // Collision
-        const dx = Math.abs(player.x - obs.x);
-        const dy = Math.abs(player.y - obs.y);
-        
-        if (dx < 35 && dy < 60) {
-            if (obs.type === 'coin') {
-                gameState.scoreInLevel += 50;
-                document.getElementById('score-val').innerText = gameState.money + gameState.scoreInLevel;
-                // Add particle effect
-                createParticles(obs.x, obs.y, 'gold');
-                obstacles.splice(i, 1);
-            } else {
-                // Crash
-                gameState.health -= 20;
-                gameState.speed *= 0.2; // Slow down massively
-                createParticles(obs.x, obs.y, 'fire');
-                game.showToast("اصطدام!");
-                obstacles.splice(i, 1);
-            }
-        }
-
-        // Cleanup
-        if (obs.y > canvas.height + 100) {
-            obstacles.splice(i, 1);
-        }
-    }
-
-    // Update Particles
-    updateParticles();
-
-    // Draw Player
-    // Add tilt based on turning
-    let tilt = 0;
-    if (input.left) tilt = -0.1;
-    if (input.right) tilt = 0.1;
-    drawCar(player.x, player.y, gameState.currentCarIndex, tilt);
-
-    updateDashboard();
-
-    requestAnimationFrame(gameLoop);
-}
-
-function createParticles(x, y, type) {
-    for(let i=0; i<10; i++) {
-        particles.push({
-            x: x, y: y,
-            vx: (Math.random() - 0.5) * 10,
-            vy: (Math.random() - 0.5) * 10,
-            life: 1.0,
-            type: type
-        });
-    }
-}
-
-function updateParticles() {
-    for(let i=particles.length-1; i>=0; i--) {
-        let p = particles[i];
-        p.x += p.vx;
-        p.y += p.vy;
-        p.life -= 0.05;
-        
-        ctx.globalAlpha = p.life;
-        if(p.type === 'fire') {
-            ctx.fillStyle = `rgb(255, ${Math.floor(Math.random()*200)}, 0)`;
-            ctx.beginPath();
-            ctx.arc(p.x, p.y, 4, 0, Math.PI*2);
-            ctx.fill();
-        } else {
-            ctx.fillStyle = '#ffd700';
-            ctx.font = '12px Arial';
-            ctx.fillText('+$', p.x, p.y);
-        }
-        ctx.globalAlpha = 1;
-
-        if(p.life <= 0) particles.splice(i, 1);
-    }
-}
-
-</script>
 </body>
 </html>
