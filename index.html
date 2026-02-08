@@ -1,305 +1,430 @@
-<!DOCTYPE html>
-<html lang="ar" dir="rtl">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Elkopa | الفخامة في الخدمات</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Amiri:wght@400;700&family=Playfair+Display:wght@400;700&display=swap" rel="stylesheet">
-    <style>
-        :root {
-            --gold: #d4af37;
-            --dark-gold: #aa8928;
-            --rich-black: #0c0c0c;
-            --soft-white: #fcfcfc;
-        }
+import React, { useState, useEffect, useRef } from 'react';
+import { initializeApp } from 'firebase/app';
+import { 
+  getAuth, 
+  signInAnonymously, 
+  signInWithCustomToken, 
+  onAuthStateChanged,
+  signOut
+} from 'firebase/auth';
+import { 
+  getFirestore, 
+  collection, 
+  doc, 
+  setDoc, 
+  getDoc, 
+  addDoc, 
+  onSnapshot, 
+  updateDoc, 
+  arrayUnion, 
+  arrayRemove,
+  query,
+  where
+} from 'firebase/firestore';
+import { 
+  User, 
+  Home, 
+  Search, 
+  PlusSquare, 
+  Heart, 
+  MessageCircle, 
+  Share2, 
+  CheckCircle, 
+  Link as LinkIcon, 
+  Camera, 
+  Film, 
+  MoreHorizontal,
+  LogOut,
+  Send,
+  Video,
+  Sparkles,
+  Edit3,
+  Globe,
+  Lock,
+  Image as ImageIcon
+} from 'lucide-react';
 
-        body {
-            font-family: 'Amiri', serif;
-            background-color: var(--rich-black);
-            color: var(--soft-white);
-            margin: 0;
-            overflow-x: hidden;
-        }
+// Firebase Configuration
+const firebaseConfig = JSON.parse(__firebase_config);
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const db = getFirestore(app);
+const appId = typeof __app_id !== 'undefined' ? __app_id : 'doncod-social-app-v2';
+const apiKey = ""; // Gemini API Key
 
-        .classic-font {
-            font-family: 'Playfair Display', serif;
-        }
+export default function App() {
+  const [user, setUser] = useState(null);
+  const [isAuthLoading, setIsAuthLoading] = useState(true);
+  const [activeTab, setActiveTab] = useState('feed'); 
+  const [posts, setPosts] = useState([]);
+  const [users, setUsers] = useState([]);
+  const [userProfile, setUserProfile] = useState(null);
+  const [isEditing, setIsEditing] = useState(false);
+  
+  // AI Assistant State
+  const [chatMessages, setChatMessages] = useState([
+    { role: 'assistant', text: 'مرحباً بك في عالم Doncod الراقي. أنا مساعدك الشخصي، كيف يمكنني خدمتك اليوم؟' }
+  ]);
+  const [inputMessage, setInputMessage] = useState('');
+  const [isTyping, setIsTyping] = useState(false);
 
-        .gold-gradient {
-            background: linear-gradient(135deg, #d4af37 0%, #f9f295 50%, #b38728 100%);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-        }
-
-        .nav-link {
-            transition: all 0.3s ease;
-            position: relative;
-        }
-
-        .nav-link::after {
-            content: '';
-            position: absolute;
-            width: 0;
-            height: 1px;
-            bottom: -2px;
-            right: 0;
-            background-color: var(--gold);
-            transition: width 0.3s ease;
-        }
-
-        .nav-link:hover::after {
-            width: 100%;
-        }
-
-        .service-card {
-            background: #151515;
-            border: 1px solid #2a2a2a;
-            transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275), border-color 0.3s;
-        }
-
-        .service-card:hover {
-            transform: translateY(-10px);
-            border-color: var(--gold);
-        }
-
-        .btn-luxury {
-            background: linear-gradient(135deg, var(--gold), var(--dark-gold));
-            color: black;
-            font-weight: bold;
-            transition: all 0.3s;
-            border: 1px solid transparent;
-        }
-
-        .btn-luxury:hover {
-            background: transparent;
-            color: var(--gold);
-            border: 1px solid var(--gold);
-            transform: scale(1.05);
-        }
-
-        .hero-overlay {
-            background: rgba(0, 0, 0, 0.7);
-        }
-
-        /* Custom Scrollbar */
-        ::-webkit-scrollbar {
-            width: 8px;
-        }
-        ::-webkit-scrollbar-track {
-            background: #0c0c0c;
-        }
-        ::-webkit-scrollbar-thumb {
-            background: var(--gold);
-            border-radius: 10px;
-        }
-    </style>
-</head>
-<body>
-
-    <!-- Header / Navigation -->
-    <header class="fixed w-full top-0 z-50 bg-black/90 border-b border-gold/20 backdrop-blur-md">
-        <div class="container mx-auto px-6 py-4 flex justify-between items-center">
-            <div class="text-3xl font-bold classic-font tracking-widest gold-gradient">ELKOPA</div>
-            
-            <nav class="hidden md:flex space-x-8 space-x-reverse text-lg">
-                <a href="#" class="nav-link">الرئيسية</a>
-                <a href="#services" class="nav-link">الخدمات</a>
-                <a href="#categories" class="nav-link">الفئات</a>
-                <a href="#" class="nav-link">من نحن</a>
-            </nav>
-
-            <div class="flex items-center space-x-6 space-x-reverse">
-                <div class="relative cursor-pointer group">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-7 w-7 text-gold" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
-                    </svg>
-                    <span class="absolute -top-2 -right-2 bg-gold text-black text-xs rounded-full h-5 w-5 flex items-center justify-center font-bold">0</span>
-                </div>
-                <button class="md:hidden text-gold">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16m-7 6h7" />
-                    </svg>
-                </button>
-            </div>
-        </div>
-    </header>
-
-    <!-- Hero Section -->
-    <section class="relative h-screen flex items-center justify-center text-center px-4 overflow-hidden">
-        <div class="absolute inset-0 z-0">
-            <img src="https://images.unsplash.com/photo-1497366216548-37526070297c?auto=format&fit=crop&q=80&w=2000" alt="Luxury Background" class="w-full h-full object-cover opacity-40">
-            <div class="absolute inset-0 hero-overlay"></div>
-        </div>
+  // Authentication Setup
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, async (currUser) => {
+      if (currUser) {
+        const userRef = doc(db, 'artifacts', appId, 'public', 'data', 'users', currUser.uid);
+        const userSnap = await getDoc(userRef);
         
-        <div class="relative z-10 max-w-4xl">
-            <h2 class="text-gold uppercase tracking-[0.3em] mb-4 text-sm md:text-base animate-pulse">مرحباً بك في عالم الفخامة</h2>
-            <h1 class="text-5xl md:text-8xl classic-font mb-8 leading-tight">متجر ELKOPA<br><span class="gold-gradient">لأرقى الخدمات</span></h1>
-            <p class="text-gray-300 text-lg md:text-xl mb-10 max-w-2xl mx-auto leading-relaxed">
-                نقدم لك مجموعة متكاملة من الخدمات المصممة خصيصاً لتلبية تطلعاتك، بجودة تفوق التوقعات وبلمسة كلاسيكية فاخرة.
-            </p>
-            <div class="flex flex-col md:flex-row justify-center gap-6">
-                <a href="#services" class="btn-luxury px-12 py-4 rounded-full text-lg shadow-lg shadow-gold/20">اكتشف خدماتنا</a>
-                <a href="#categories" class="border border-gold text-gold px-12 py-4 rounded-full text-lg hover:bg-gold hover:text-black transition-all">الفئات المختارة</a>
-            </div>
-        </div>
-    </section>
+        if (userSnap.exists()) {
+          setUserProfile(userSnap.data());
+          setUser(currUser);
+        } else {
+          // New User Setup
+          const newUser = {
+            uid: currUser.uid,
+            displayName: `عضو_Doncod_${currUser.uid.slice(0, 4)}`,
+            photoURL: `https://api.dicebear.com/7.x/initials/svg?seed=${currUser.uid}&backgroundColor=4f46e5`,
+            bio: 'مرحباً بي في Doncod، حيث تلتقي الفخامة بالتواصل.',
+            links: { instagram: '', twitter: '', website: '' },
+            isVerified: true,
+            createdAt: new Date().toISOString()
+          };
+          await setDoc(userRef, newUser);
+          setUserProfile(newUser);
+          setUser(currUser);
+        }
+      } else {
+        setUser(null);
+        setUserProfile(null);
+      }
+      setIsAuthLoading(false);
+    });
+    return () => unsubscribe();
+  }, []);
 
-    <!-- Categories Section -->
-    <section id="categories" class="py-20 bg-[#080808]">
-        <div class="container mx-auto px-6">
-            <div class="text-center mb-16">
-                <h3 class="classic-font text-4xl mb-2">فئاتنا المميزة</h3>
-                <div class="w-24 h-1 bg-gold mx-auto"></div>
+  // Listen to Data
+  useEffect(() => {
+    if (!user) return;
+
+    const postsRef = collection(db, 'artifacts', appId, 'public', 'data', 'posts');
+    const unsubPosts = onSnapshot(postsRef, (snap) => {
+      const data = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+      setPosts(data.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt)));
+    });
+
+    const usersRef = collection(db, 'artifacts', appId, 'public', 'data', 'users');
+    const unsubUsers = onSnapshot(usersRef, (snap) => {
+      setUsers(snap.docs.map(d => d.data()));
+    });
+
+    return () => { unsubPosts(); unsubUsers(); };
+  }, [user]);
+
+  const handleLogin = async () => {
+    setIsAuthLoading(true);
+    try {
+      if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+        await signInWithCustomToken(auth, __initial_auth_token);
+      } else {
+        await signInAnonymously(auth);
+      }
+    } catch (e) {
+      console.error(e);
+    }
+  };
+
+  const handleUpdateProfile = async (e) => {
+    e.preventDefault();
+    const form = e.target;
+    const updates = {
+      displayName: form.displayName.value,
+      bio: form.bio.value,
+      photoURL: form.photoURL.value || userProfile.photoURL,
+    };
+    
+    const userRef = doc(db, 'artifacts', appId, 'public', 'data', 'users', user.uid);
+    await updateDoc(userRef, updates);
+    setUserProfile({ ...userProfile, ...updates });
+    setIsEditing(false);
+  };
+
+  const askAI = async () => {
+    if (!inputMessage.trim()) return;
+    const msg = inputMessage;
+    setInputMessage('');
+    setChatMessages(prev => [...prev, { role: 'user', text: msg }]);
+    setIsTyping(true);
+
+    try {
+      const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${apiKey}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          contents: [{ parts: [{ text: `You are the Luxury Doncod Assistant. User says: ${msg}` }] }]
+        })
+      });
+      const data = await response.json();
+      const aiText = data.candidates?.[0]?.content?.parts?.[0]?.text || "عذراً، لم أستطع فهم ذلك.";
+      setChatMessages(prev => [...prev, { role: 'assistant', text: aiText }]);
+    } catch (err) {
+      setChatMessages(prev => [...prev, { role: 'assistant', text: "خطأ في الاتصال بالمساعد." }]);
+    } finally {
+      setIsTyping(false);
+    }
+  };
+
+  const createPost = async (e) => {
+    e.preventDefault();
+    const content = e.target.content.value;
+    if (!content) return;
+    
+    await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'posts'), {
+      userId: user.uid,
+      userName: userProfile.displayName,
+      userPhoto: userProfile.photoURL,
+      content,
+      mediaUrl: `https://picsum.photos/seed/${Math.random()}/800/800`,
+      likes: [],
+      createdAt: new Date().toISOString(),
+      isVerified: true
+    });
+    e.target.reset();
+    setActiveTab('feed');
+  };
+
+  if (isAuthLoading) return (
+    <div className="h-screen bg-slate-950 flex items-center justify-center text-white font-serif tracking-widest animate-pulse">
+      DONCOD
+    </div>
+  );
+
+  // Auth Screen
+  if (!user) return (
+    <div className="max-w-md mx-auto h-screen bg-slate-950 flex flex-col items-center justify-center p-8 text-center" dir="rtl">
+      <div className="w-24 h-24 bg-gradient-to-tr from-indigo-600 to-purple-600 rounded-3xl rotate-12 flex items-center justify-center mb-8 shadow-2xl">
+        <span className="text-4xl font-black text-white -rotate-12">D</span>
+      </div>
+      <h1 className="text-4xl font-serif font-black text-white mb-2 tracking-tighter">DONCOD</h1>
+      <p className="text-slate-400 text-sm mb-12 leading-relaxed">اكتشف عالماً من التواصل الحقيقي والفخامة الرقمية. يرجى تسجيل الدخول للبدء.</p>
+      
+      <button 
+        onClick={handleLogin}
+        className="w-full bg-indigo-600 text-white font-bold py-4 rounded-2xl hover:bg-indigo-700 transition-all flex items-center justify-center gap-3 shadow-xl shadow-indigo-900/20"
+      >
+        <Lock size={18} /> إنشاء حساب / دخول سريع
+      </button>
+      
+      <div className="mt-8 flex gap-4 opacity-50">
+        <Globe size={16} className="text-white" />
+        <CheckCircle size={16} className="text-white" />
+        <Sparkles size={16} className="text-white" />
+      </div>
+    </div>
+  );
+
+  return (
+    <div className="max-w-md mx-auto h-screen bg-white flex flex-col shadow-2xl font-sans overflow-hidden border-x border-slate-100" dir="rtl">
+      {/* Header */}
+      <header className="px-6 py-4 border-b border-slate-50 flex justify-between items-center bg-white/80 backdrop-blur-xl sticky top-0 z-[60]">
+        <h1 className="text-2xl font-serif font-black text-slate-900 tracking-tighter italic">Doncod</h1>
+        <div className="flex items-center gap-4">
+          <button onClick={() => setActiveTab('chat')} className={`p-2 rounded-full transition ${activeTab === 'chat' ? 'bg-indigo-50 text-indigo-600' : 'text-slate-400'}`}>
+            <Sparkles size={22} />
+          </button>
+          <button onClick={() => setActiveTab('profile')} className="relative border-2 border-indigo-50 p-0.5 rounded-full overflow-hidden">
+            <img src={userProfile.photoURL} className="w-8 h-8 rounded-full object-cover" />
+            {userProfile.isVerified && <CheckCircle size={12} className="absolute -bottom-1 -right-1 text-blue-500 fill-white" />}
+          </button>
+        </div>
+      </header>
+
+      {/* Content */}
+      <main className="flex-1 overflow-y-auto bg-slate-50/50 pb-24 custom-scrollbar">
+        {activeTab === 'feed' && (
+          <div className="p-4 space-y-6">
+            {posts.map(post => (
+              <div key={post.id} className="bg-white rounded-3xl border border-slate-100 overflow-hidden shadow-sm transition-transform active:scale-[0.98]">
+                <div className="p-4 flex items-center gap-3">
+                  <div className="relative">
+                    <img src={post.userPhoto} className="w-10 h-10 rounded-full border" />
+                    {post.isVerified && <CheckCircle size={14} className="absolute -bottom-1 -right-1 text-blue-500 fill-white" />}
+                  </div>
+                  <div>
+                    <h4 className="text-sm font-bold text-slate-900">{post.userName}</h4>
+                    <span className="text-[10px] text-slate-400 uppercase tracking-widest">{new Date(post.createdAt).toLocaleDateString('ar-SA')}</span>
+                  </div>
+                </div>
+                <img src={post.mediaUrl} className="w-full aspect-[4/5] object-cover" />
+                <div className="p-5">
+                  <div className="flex gap-5 mb-4">
+                    <button className="text-slate-800 hover:text-rose-500 transition-colors"><Heart size={26} /></button>
+                    <button className="text-slate-800 hover:text-indigo-600"><MessageCircle size={26} /></button>
+                    <button className="text-slate-800"><Share2 size={26} /></button>
+                  </div>
+                  <p className="text-sm leading-relaxed text-slate-700">
+                    <span className="font-bold ml-2 text-slate-900">{post.userName}</span>
+                    {post.content}
+                  </p>
+                </div>
+              </div>
+            ))}
+            {posts.length === 0 && (
+              <div className="py-20 text-center opacity-30">لا توجد منشورات حقيقية بعد..</div>
+            )}
+          </div>
+        )}
+
+        {activeTab === 'search' && (
+          <div className="p-6">
+            <div className="relative mb-8">
+              <Search className="absolute right-4 top-4 text-slate-400" size={20} />
+              <input 
+                placeholder="البحث عن النخبة في Doncod..." 
+                className="w-full bg-white border border-slate-100 rounded-2xl py-4 pr-12 pl-4 shadow-inner outline-none focus:ring-2 focus:ring-indigo-100"
+                value={searchQuery}
+                onChange={e => setSearchQuery(e.target.value)}
+              />
+            </div>
+            <div className="space-y-4">
+              {users.filter(u => u.displayName.toLowerCase().includes(searchQuery.toLowerCase())).map(u => (
+                <div key={u.uid} className="bg-white p-4 rounded-2xl flex items-center justify-between border border-slate-50 shadow-sm">
+                  <div className="flex items-center gap-3">
+                    <img src={u.photoURL} className="w-12 h-12 rounded-full border" />
+                    <div>
+                      <p className="font-bold text-slate-900 flex items-center gap-1">{u.displayName} {u.isVerified && <CheckCircle size={14} className="text-blue-500 fill-white" />}</p>
+                      <p className="text-xs text-slate-400 truncate max-w-[150px]">{u.bio}</p>
+                    </div>
+                  </div>
+                  <button className="bg-slate-900 text-white text-[10px] px-5 py-2 rounded-full font-bold uppercase tracking-widest">متابعة</button>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {activeTab === 'chat' && (
+          <div className="flex flex-col h-[calc(100vh-160px)] bg-white">
+            <div className="flex-1 overflow-y-auto p-6 space-y-6 custom-scrollbar">
+              {chatMessages.map((m, i) => (
+                <div key={i} className={`flex ${m.role === 'user' ? 'justify-end' : 'justify-start'}`}>
+                  <div className={`max-w-[85%] p-4 rounded-3xl text-sm leading-relaxed ${
+                    m.role === 'user' ? 'bg-indigo-600 text-white rounded-tl-none shadow-lg' : 'bg-slate-50 text-slate-800 rounded-tr-none border border-slate-100'
+                  }`}>
+                    {m.text}
+                  </div>
+                </div>
+              ))}
+              {isTyping && <div className="text-[10px] text-slate-400 animate-pulse">المساعد يفكر برقي...</div>}
+            </div>
+            <div className="p-4 bg-white border-t flex gap-2">
+              <input 
+                className="flex-1 bg-slate-50 rounded-2xl px-5 py-3 text-sm outline-none border border-slate-100 focus:border-indigo-300 transition"
+                placeholder="تحدث مع مساعدك الذكي..."
+                value={inputMessage}
+                onChange={e => setInputMessage(e.target.value)}
+                onKeyPress={e => e.key === 'Enter' && askAI()}
+              />
+              <button onClick={askAI} className="bg-slate-900 text-white p-3 rounded-2xl"><Send size={20} /></button>
+            </div>
+          </div>
+        )}
+
+        {activeTab === 'create' && (
+          <div className="p-8">
+            <h2 className="text-2xl font-serif font-black mb-8">إنشاء محتوى حقيقي</h2>
+            <form onSubmit={createPost} className="space-y-6">
+              <div className="bg-indigo-50/50 p-10 rounded-3xl border-2 border-indigo-100 border-dashed flex flex-col items-center justify-center text-indigo-400 hover:bg-indigo-50 transition cursor-pointer">
+                <ImageIcon size={48} className="mb-4" />
+                <span className="text-xs font-bold uppercase tracking-widest">رفع وسائط حقيقية</span>
+              </div>
+              <textarea 
+                name="content"
+                placeholder="اكتب شيئاً يليق بك..."
+                className="w-full h-40 p-5 bg-white border border-slate-100 rounded-3xl outline-none focus:ring-2 focus:ring-indigo-100 text-sm shadow-sm"
+              ></textarea>
+              <button className="w-full bg-indigo-600 text-white font-bold py-5 rounded-3xl shadow-xl shadow-indigo-100">نشر الآن</button>
+            </form>
+          </div>
+        )}
+
+        {activeTab === 'profile' && (
+          <div className="animate-in fade-in duration-500">
+            <div className="p-8 text-center bg-white border-b border-slate-50 relative">
+               <button onClick={() => setIsEditing(true)} className="absolute top-8 left-8 p-2 bg-slate-50 text-slate-400 rounded-full"><Edit3 size={18} /></button>
+              <div className="relative inline-block mb-6">
+                <div className="w-32 h-32 rounded-full p-1 bg-gradient-to-tr from-indigo-500 to-purple-500 shadow-2xl">
+                  <img src={userProfile.photoURL} className="w-full h-full rounded-full object-cover border-4 border-white bg-slate-100" />
+                </div>
+                {userProfile.isVerified && <CheckCircle size={28} className="absolute bottom-1 right-1 text-blue-500 fill-white" />}
+              </div>
+              <h2 className="text-2xl font-serif font-black text-slate-900 mb-2">{userProfile.displayName}</h2>
+              <p className="text-slate-400 text-sm leading-relaxed max-w-[250px] mx-auto mb-6">{userProfile.bio}</p>
+              
+              <div className="grid grid-cols-3 gap-8 py-4 border-y border-slate-50">
+                <div><p className="font-black text-slate-900">0</p><p className="text-[10px] text-slate-400 uppercase">متابع</p></div>
+                <div><p className="font-black text-slate-900">{posts.filter(p => p.userId === user.uid).length}</p><p className="text-[10px] text-slate-400 uppercase">منشور</p></div>
+                <div><p className="font-black text-slate-900">0</p><p className="text-[10px] text-slate-400 uppercase">متابعة</p></div>
+              </div>
             </div>
             
-            <div class="grid grid-cols-2 md:grid-cols-4 gap-6">
-                <div class="text-center group cursor-pointer">
-                    <div class="aspect-square bg-[#111] border border-gold/10 flex items-center justify-center mb-4 overflow-hidden rounded-lg">
-                        <img src="https://images.unsplash.com/photo-1460925895917-afdab827c52f?auto=format&fit=crop&q=80&w=500" class="w-full h-full object-cover opacity-50 group-hover:scale-110 transition-transform duration-700" alt="Marketing">
-                    </div>
-                    <h4 class="text-gold font-bold">التسويق الفاخر</h4>
+            <div className="grid grid-cols-3 gap-0.5 mt-0.5">
+              {posts.filter(p => p.userId === user.uid).map(p => (
+                <div key={p.id} className="aspect-square bg-slate-100 overflow-hidden group relative">
+                   <img src={p.mediaUrl} className="w-full h-full object-cover group-hover:scale-110 transition duration-500" />
+                   <div className="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 transition flex items-center justify-center text-white"><Heart size={20} fill="white" /></div>
                 </div>
-                <div class="text-center group cursor-pointer">
-                    <div class="aspect-square bg-[#111] border border-gold/10 flex items-center justify-center mb-4 overflow-hidden rounded-lg">
-                        <img src="https://images.unsplash.com/photo-1551434678-e076c223a692?auto=format&fit=crop&q=80&w=500" class="w-full h-full object-cover opacity-50 group-hover:scale-110 transition-transform duration-700" alt="Consulting">
-                    </div>
-                    <h4 class="text-gold font-bold">الاستشارات</h4>
-                </div>
-                <div class="text-center group cursor-pointer">
-                    <div class="aspect-square bg-[#111] border border-gold/10 flex items-center justify-center mb-4 overflow-hidden rounded-lg">
-                        <img src="https://images.unsplash.com/photo-1512314889357-e157c22f938d?auto=format&fit=crop&q=80&w=500" class="w-full h-full object-cover opacity-50 group-hover:scale-110 transition-transform duration-700" alt="Design">
-                    </div>
-                    <h4 class="text-gold font-bold">التصميم الإبداعي</h4>
-                </div>
-                <div class="text-center group cursor-pointer">
-                    <div class="aspect-square bg-[#111] border border-gold/10 flex items-center justify-center mb-4 overflow-hidden rounded-lg">
-                        <img src="https://images.unsplash.com/photo-1454165833767-027ffea9e77b?auto=format&fit=crop&q=80&w=500" class="w-full h-full object-cover opacity-50 group-hover:scale-110 transition-transform duration-700" alt="Management">
-                    </div>
-                    <h4 class="text-gold font-bold">إدارة الأعمال</h4>
-                </div>
+              ))}
             </div>
+            
+            <div className="p-10 text-center">
+              <button onClick={() => signOut(auth)} className="text-rose-500 text-xs font-bold uppercase tracking-widest flex items-center justify-center gap-2 mx-auto"><LogOut size={16} /> تسجيل الخروج</button>
+            </div>
+          </div>
+        )}
+      </main>
+
+      {/* Edit Modal */}
+      {isEditing && (
+        <div className="fixed inset-0 bg-slate-950/80 backdrop-blur-md z-[100] flex items-center justify-center p-6">
+          <div className="bg-white w-full max-w-xs rounded-[40px] p-8 animate-in zoom-in-95">
+            <h3 className="text-xl font-serif font-black mb-6 text-slate-900">تعديل الملف النخبوِي</h3>
+            <form onSubmit={handleUpdateProfile} className="space-y-4">
+              <div>
+                <label className="text-[10px] font-bold text-slate-400 uppercase block mb-1">الاسم الراقي</label>
+                <input name="displayName" defaultValue={userProfile.displayName} className="w-full bg-slate-50 border-none rounded-2xl p-4 text-sm outline-none" />
+              </div>
+              <div>
+                <label className="text-[10px] font-bold text-slate-400 uppercase block mb-1">الرابط لصورتك الشخصية</label>
+                <input name="photoURL" placeholder="https://..." className="w-full bg-slate-50 border-none rounded-2xl p-4 text-sm outline-none" />
+              </div>
+              <div>
+                <label className="text-[10px] font-bold text-slate-400 uppercase block mb-1">النبذة الشخصية</label>
+                <textarea name="bio" defaultValue={userProfile.bio} className="w-full bg-slate-50 border-none rounded-2xl p-4 text-sm h-24 outline-none resize-none"></textarea>
+              </div>
+              <div className="flex gap-2 pt-4">
+                <button type="submit" className="flex-1 bg-indigo-600 text-white font-bold py-4 rounded-2xl text-xs">حفظ</button>
+                <button type="button" onClick={() => setIsEditing(false)} className="flex-1 bg-slate-100 text-slate-500 font-bold py-4 rounded-2xl text-xs">إلغاء</button>
+              </div>
+            </form>
+          </div>
         </div>
-    </section>
+      )}
 
-    <!-- Services Section -->
-    <section id="services" class="py-24">
-        <div class="container mx-auto px-6">
-            <div class="flex flex-col md:flex-row justify-between items-end mb-16">
-                <div>
-                    <h2 class="text-gold tracking-widest uppercase text-sm mb-4">قائمة الخدمات</h2>
-                    <h3 class="text-5xl classic-font">اختر الخدمة التي تليق بك</h3>
-                </div>
-                <p class="text-gray-400 mt-4 md:mt-0 max-w-sm">
-                    كل خدمة نقدمها هي رحلة نحو التميز، نعتني بأدق التفاصيل لضمان رضاكم الدائم.
-                </p>
-            </div>
+      {/* Nav */}
+      <nav className="fixed bottom-0 left-0 right-0 max-w-md mx-auto bg-white/90 backdrop-blur-xl border-t border-slate-50 flex justify-around items-center py-5 z-50">
+        <button onClick={() => setActiveTab('feed')} className={activeTab === 'feed' ? 'text-indigo-600' : 'text-slate-400'}><Home size={26} /></button>
+        <button onClick={() => setActiveTab('search')} className={activeTab === 'search' ? 'text-indigo-600' : 'text-slate-400'}><Search size={26} /></button>
+        <button onClick={() => setActiveTab('create')} className="bg-slate-950 text-white p-3.5 rounded-3xl -mt-12 border-8 border-white shadow-2xl active:scale-90 transition"><PlusSquare size={26} /></button>
+        <button onClick={() => setActiveTab('chat')} className={activeTab === 'chat' ? 'text-indigo-600' : 'text-slate-400'}><MessageCircle size={26} /></button>
+        <button onClick={() => setActiveTab('profile')} className={activeTab === 'profile' ? 'text-indigo-600' : 'text-slate-400'}><User size={26} /></button>
+      </nav>
 
-            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-10" id="servicesContainer">
-                <!-- Services will be injected by JS or hardcoded here -->
-            </div>
-        </div>
-    </section>
-
-    <!-- Footer -->
-    <footer class="bg-black border-t border-gold/20 py-16">
-        <div class="container mx-auto px-6 text-center">
-            <div class="text-4xl font-bold classic-font gold-gradient mb-8">ELKOPA</div>
-            <p class="text-gray-500 max-w-md mx-auto mb-10">
-                وجهتكم الأولى للخدمات الفاخرة التي تجمع بين الأصالة والاحترافية.
-            </p>
-            <div class="flex justify-center space-x-6 space-x-reverse mb-10 text-gold">
-                <a href="#" class="hover:text-white transition">واتساب</a>
-                <a href="#" class="hover:text-white transition">إنستغرام</a>
-                <a href="#" class="hover:text-white transition">تويتر</a>
-            </div>
-            <div class="text-gray-600 text-sm">
-                &copy; 2024 جميع الحقوق محفوظة لمتجر Elkopa. صمم بكل فخامة.
-            </div>
-        </div>
-    </footer>
-
-    <script>
-        const services = [
-            {
-                title: "تصميم الهويات البصرية",
-                description: "نبتكر شعارات وهويات تعكس فخامة علامتك التجارية وتترك انطباعاً لا ينسى.",
-                image: "https://images.unsplash.com/photo-1626785774573-4b799315345d?auto=format&fit=crop&q=80&w=600",
-                price: "تبدأ من 500$"
-            },
-            {
-                title: "التسويق الرقمي الفاخر",
-                description: "حملات إعلانية مدروسة تستهدف النخبة لزيادة مبيعاتك وتعزيز تواجدك.",
-                image: "https://images.unsplash.com/photo-1460925895917-afdab827c52f?auto=format&fit=crop&q=80&w=600",
-                price: "حسب الخطة"
-            },
-            {
-                title: "تطوير المواقع الحصرية",
-                description: "تصميم وبرمجة مواقع ويب سريعة، آمنة، وفخمة تتناسب مع مستوى أعمالك.",
-                image: "https://images.unsplash.com/photo-1547658719-da2b51169166?auto=format&fit=crop&q=80&w=600",
-                price: "تبدأ من 1200$"
-            },
-            {
-                title: "استشارات إدارة الأعمال",
-                description: "حلول إستراتيجية لتطوير هيكلية شركتك وضمان النمو المستدام لمشاريعك.",
-                image: "https://images.unsplash.com/photo-1551836022-d5d88e9218df?auto=format&fit=crop&q=80&w=600",
-                price: "استشارة مجانية"
-            },
-            {
-                title: "إدارة التواصل الاجتماعي",
-                description: "صناعة محتوى إبداعي وإدارة كاملة لحساباتك بأسلوب راقٍ واحترافي.",
-                image: "https://images.unsplash.com/photo-1611162617474-5b21e879e113?auto=format&fit=crop&q=80&w=600",
-                price: "شهرياً 300$"
-            },
-            {
-                title: "كتابة المحتوى الإبداعي",
-                description: "صياغة نصوص بيعية ومحتوى حصري يعبر عن قيم علامتك التجارية بدقة.",
-                image: "https://images.unsplash.com/photo-1455390582262-044cdead277a?auto=format&fit=crop&q=80&w=600",
-                price: "تبدأ من 100$"
-            }
-        ];
-
-        const servicesContainer = document.getElementById('servicesContainer');
-        const phoneNumber = "212626014697";
-
-        services.forEach(service => {
-            const encodedMsg = encodeURIComponent(`مرحباً متجر Elkopa، أود الاستفسار عن خدمة: ${service.title}`);
-            const whatsappLink = `https://wa.me/${phoneNumber}?text=${encodedMsg}`;
-
-            const card = `
-                <div class="service-card rounded-xl overflow-hidden shadow-2xl group">
-                    <div class="h-64 overflow-hidden">
-                        <img src="${service.image}" alt="${service.title}" class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500 opacity-80">
-                    </div>
-                    <div class="p-8">
-                        <div class="flex justify-between items-start mb-4">
-                            <h4 class="text-2xl font-bold classic-font text-white">${service.title}</h4>
-                            <span class="text-gold text-sm font-bold">${service.price}</span>
-                        </div>
-                        <p class="text-gray-400 mb-8 leading-relaxed">
-                            ${service.description}
-                        </p>
-                        <a href="${whatsappLink}" target="_blank" class="btn-luxury block w-full text-center py-4 rounded-lg">
-                            اطلب الخدمة الآن
-                        </a>
-                    </div>
-                </div>
-            `;
-            servicesContainer.innerHTML += card;
-        });
-
-        // Smooth Scroll for links
-        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
-            anchor.addEventListener('click', function (e) {
-                e.preventDefault();
-                document.querySelector(this.getAttribute('href')).scrollIntoView({
-                    behavior: 'smooth'
-                });
-            });
-        });
-    </script>
-
-</body>
-</html>
+      <style dangerouslySetInnerHTML={{ __html: `
+        .custom-scrollbar::-webkit-scrollbar { width: 3px; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #e2e8f0; border-radius: 10px; }
+        @keyframes zoom-in-95 { from { transform: scale(0.95); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+        .animate-in { animation: zoom-in-95 0.3s ease-out forwards; }
+      ` }} />
+    </div>
+  );
+}
