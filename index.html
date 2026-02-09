@@ -1,6 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
 import * as THREE from 'three';
-// تصحيح استيراد الرموز لضمان عملها بشكل صحيح
 import { 
   Send, 
   User, 
@@ -9,18 +8,21 @@ import {
   Moon, 
   Sun, 
   Trash2, 
-  ChevronRight,
   Settings,
   X,
   ShieldCheck,
   Cpu,
   RotateCcw,
-  RefreshCw
+  RefreshCw,
+  Sparkles,
+  Zap,
+  Layout,
+  Globe
 } from 'lucide-react';
 
 const apiKey = ""; 
 
-// --- خلفية ثلاثية الأبعاد احترافية ---
+// --- High-End 3D Visualizer Background ---
 const LuxuryBackground = ({ isDarkMode }) => {
   const mountRef = useRef(null);
 
@@ -35,47 +37,49 @@ const LuxuryBackground = ({ isDarkMode }) => {
 
     const group = new THREE.Group();
     
-    // قلب النظام (Core)
-    const coreGeom = new THREE.IcosahedronGeometry(4, 2);
-    const coreMat = new THREE.MeshPhongMaterial({ 
-      color: 0x00d2ff, 
+    // Abstract Cyber Geometry
+    const geometry = new THREE.TorusKnotGeometry(10, 3, 100, 16);
+    const material = new THREE.MeshPhongMaterial({ 
+      color: isDarkMode ? 0x00d2ff : 0x9d50bb, 
       wireframe: true,
       transparent: true,
-      opacity: 0.1
+      opacity: 0.05
     });
-    const core = new THREE.Mesh(coreGeom, coreMat);
-    group.add(core);
+    const knot = new THREE.Mesh(geometry, material);
+    group.add(knot);
 
-    // جزيئات محيطة (Particles)
-    const pointsGeom = new THREE.BufferGeometry();
-    const count = 500;
-    const positions = new Float32Array(count * 3);
-    for(let i = 0; i < count * 3; i++) {
-      positions[i] = (Math.random() - 0.5) * 30;
+    // Floating Particles System
+    const particlesGeometry = new THREE.BufferGeometry();
+    const particlesCount = 1500;
+    const posArray = new Float32Array(particlesCount * 3);
+    for(let i = 0; i < particlesCount * 3; i++) {
+      posArray[i] = (Math.random() - 0.5) * 60;
     }
-    pointsGeom.setAttribute('position', new THREE.BufferAttribute(positions, 3));
-    const pointsMat = new THREE.PointsMaterial({
-      size: 0.05,
-      color: 0x9d50bb,
+    particlesGeometry.setAttribute('position', new THREE.BufferAttribute(posArray, 3));
+    const particlesMaterial = new THREE.PointsMaterial({
+      size: 0.02,
+      color: isDarkMode ? 0xffffff : 0x000000,
       transparent: true,
-      opacity: 0.5
+      opacity: 0.3
     });
-    const points = new THREE.Points(pointsGeom, pointsMat);
-    group.add(points);
+    const particlesMesh = new THREE.Points(particlesGeometry, particlesMaterial);
+    group.add(particlesMesh);
 
     scene.add(group);
     
-    const light = new THREE.DirectionalLight(0xffffff, 1);
-    light.position.set(1, 1, 1);
-    scene.add(light);
-    scene.add(new THREE.AmbientLight(0xffffff, 0.5));
+    const ambientLight = new THREE.AmbientLight(0xffffff, 0.8);
+    scene.add(ambientLight);
+    
+    const pointLight = new THREE.PointLight(0x00d2ff, 1);
+    pointLight.position.set(20, 20, 20);
+    scene.add(pointLight);
 
-    camera.position.z = 15;
+    camera.position.z = 25;
 
     const animate = () => {
       requestAnimationFrame(animate);
-      group.rotation.y += 0.001;
-      group.rotation.x += 0.0005;
+      group.rotation.y += 0.0005;
+      group.rotation.z += 0.0002;
       renderer.render(scene, camera);
     };
     animate();
@@ -90,16 +94,16 @@ const LuxuryBackground = ({ isDarkMode }) => {
       window.removeEventListener('resize', handleResize);
       mountRef.current?.removeChild(renderer.domElement);
     };
-  }, []);
+  }, [isDarkMode]);
 
-  return <div ref={mountRef} className={`fixed inset-0 -z-10 transition-colors duration-1000 ${isDarkMode ? 'bg-[#020617]' : 'bg-[#f8fafc]'}`} />;
+  return <div ref={mountRef} className={`fixed inset-0 -z-10 transition-all duration-1000 ${isDarkMode ? 'bg-[#020617]' : 'bg-[#fcfcfd]'}`} />;
 };
 
 const App = () => {
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const [isDarkMode, setIsDarkMode] = useState(false);
+  const [isDarkMode, setIsDarkMode] = useState(true);
   const [attachedImage, setAttachedImage] = useState(null);
   const [showSettings, setShowSettings] = useState(false);
   const messagesEndRef = useRef(null);
@@ -137,21 +141,21 @@ const App = () => {
             parts: [{ text: input }, ...(userMsg.image ? [{ inlineData: { mimeType: "image/png", data: userMsg.image.split(',')[1] } }] : [])]
           }],
           tools: [{ "google_search": {} }],
-          systemInstruction: { parts: [{ text: "أنت elkopa، مساعد ذكاء اصطناعي فائق صممه حمزة القبة. رد بالعربية." }] }
+          systemInstruction: { parts: [{ text: "أنت Elkopa AI، كيان ذكاء اصطناعي متطور صممه المطور الرائد حمزة القبة. تمتاز بردودك الذكية، المختصرة، والاحترافية باللغة العربية." }] }
         })
       });
 
       const data = await response.json();
       const botMsg = { 
         role: 'bot', 
-        content: data.candidates?.[0]?.content?.parts?.[0]?.text || "حدث خطأ في النظام.", 
+        content: data.candidates?.[0]?.content?.parts?.[0]?.text || "النظام غير قادر على المعالجة حالياً.", 
         time: new Date().toLocaleTimeString('ar-EG', { hour: '2-digit', minute: '2-digit' }),
         sources: data.candidates?.[0]?.groundingMetadata?.groundingAttributions?.map(a => ({ uri: a.web?.uri, title: a.web?.title }))
       };
 
       setMessages(prev => [...prev, botMsg]);
     } catch (err) {
-      setMessages(prev => [...prev, { role: 'bot', content: "فشل الاتصال بالخادم.", time: "" }]);
+      setMessages(prev => [...prev, { role: 'bot', content: "خطأ في البروتوكول السحابي.", time: "" }]);
     } finally {
       setIsLoading(false);
     }
@@ -163,157 +167,249 @@ const App = () => {
     setShowSettings(false);
   };
 
-  // Neumorphic Styles (تصميم عصري)
-  const neumorphicIn = isDarkMode 
-    ? `shadow-[inset_2px_2px_5px_#000,inset_-2px_-2px_5px_#1e293b] border-white/5` 
-    : `shadow-[inset_2px_2px_5px_#d1d9e6,inset_-2px_-2px_5px_#ffffff] border-slate-200/50`;
-  
-  const neumorphicOut = isDarkMode 
-    ? `shadow-[3px_3px_6px_#000,-2px_-2px_6px_#1e293b] border-white/10` 
-    : `shadow-[3px_3px_6px_#d1d9e6,-3px_-3px_6px_#ffffff] border-slate-200/60`;
+  // Glassmorphism & Premium Styles
+  const glassStyle = isDarkMode 
+    ? "bg-white/5 backdrop-blur-xl border border-white/10" 
+    : "bg-black/5 backdrop-blur-xl border border-black/5";
 
-  const textStyle = isDarkMode ? "text-slate-200" : "text-black";
+  const activeTabStyle = "bg-gradient-to-r from-[#00d2ff] to-[#9d50bb] text-white shadow-[0_0_15px_rgba(0,210,255,0.3)]";
 
   return (
-    <div className={`flex h-screen w-full font-sans transition-all duration-700 overflow-hidden text-[13px] ${textStyle}`} dir="rtl">
+    <div className={`flex h-screen w-full font-sans transition-all duration-700 overflow-hidden ${isDarkMode ? 'text-slate-100' : 'text-slate-900'}`} dir="rtl">
       <LuxuryBackground isDarkMode={isDarkMode} />
 
-      {/* Sidebar */}
-      <aside className={`w-14 md:w-52 flex flex-col z-30 transition-all p-2 ${isDarkMode ? 'bg-[#020617]/80' : 'bg-white/80'} backdrop-blur-md border-l ${isDarkMode ? 'border-white/5' : 'border-slate-200'}`}>
-        <div className={`p-3 rounded-xl mb-4 flex flex-col items-center gap-1 transition-all ${neumorphicOut}`}>
-          <div className="w-8 h-8 bg-gradient-to-br from-[#00d2ff] to-[#9d50bb] rounded-lg flex items-center justify-center shadow-lg">
-             <Cpu className="text-white w-5 h-5" />
+      {/* Modern Slim Sidebar */}
+      <aside className={`w-16 md:w-64 flex flex-col z-30 transition-all duration-500 ${isDarkMode ? 'bg-black/40' : 'bg-white/40'} backdrop-blur-2xl border-l ${isDarkMode ? 'border-white/5' : 'border-black/5'}`}>
+        <div className="p-6 flex flex-col items-center md:items-start gap-4">
+          <div className="relative group">
+            <div className="absolute -inset-1 bg-gradient-to-r from-[#00d2ff] to-[#9d50bb] rounded-xl blur opacity-25 group-hover:opacity-100 transition duration-1000"></div>
+            <div className="relative w-10 h-10 bg-slate-900 rounded-xl flex items-center justify-center border border-white/10">
+              <Zap className="text-[#00d2ff] w-6 h-6 animate-pulse" />
+            </div>
           </div>
-          <h1 className="text-[12px] font-black italic tracking-tighter hidden md:block text-[#00d2ff]">ELKOPA</h1>
+          <div className="hidden md:block">
+            <h1 className="text-lg font-black tracking-tighter bg-clip-text text-transparent bg-gradient-to-r from-white to-slate-500">ELKOPA AI</h1>
+            <p className="text-[10px] font-bold text-[#00d2ff] tracking-[0.3em] uppercase opacity-80">Premium Intelligence</p>
+          </div>
         </div>
 
-        <div className="flex-1 space-y-2 overflow-y-auto scrollbar-hide">
-          <button onClick={clearChat} className={`w-full flex items-center justify-center md:justify-start gap-2 p-2.5 rounded-lg transition-all active:scale-95 ${neumorphicOut} hover:scale-[1.02]`}>
-            <PlusCircle size={16} className="text-[#00d2ff]" />
-            <span className="hidden md:block font-bold text-[10px]">جديد</span>
+        <nav className="flex-1 px-3 space-y-2 mt-4">
+          <button onClick={clearChat} className={`w-full flex items-center justify-center md:justify-start gap-3 p-3 rounded-xl transition-all hover:bg-white/10 group`}>
+            <PlusCircle size={18} className="text-[#00d2ff] group-hover:rotate-90 transition-transform" />
+            <span className="hidden md:block font-bold text-xs">جلسة جديدة</span>
           </button>
+          
+          <div className="py-4 px-2 hidden md:block">
+            <p className="text-[9px] font-black text-slate-500 uppercase tracking-widest mb-3">الاختصارات</p>
+            <div className="space-y-1">
+              {['النماذج الذكية', 'تحليل الصور', 'البحث المتقدم'].map((item, i) => (
+                <div key={i} className="flex items-center gap-2 text-[11px] p-2 hover:bg-white/5 rounded-lg cursor-pointer opacity-70 hover:opacity-100">
+                  <Layout size={12} className="text-[#9d50bb]" />
+                  <span>{item}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        </nav>
 
-          <button onClick={clearChat} className={`w-full flex items-center justify-center md:justify-start gap-2 p-2.5 rounded-lg transition-all active:scale-95 ${neumorphicOut} hover:text-red-500`}>
-            <Trash2 size={16} className="text-slate-400" />
-            <span className="hidden md:block font-bold text-[10px]">مسح</span>
+        <div className="p-4 mt-auto space-y-3">
+          <div className={`p-3 rounded-2xl hidden md:flex items-center gap-3 ${glassStyle}`}>
+            <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-slate-700 to-slate-900 border border-white/10 flex items-center justify-center font-black text-[10px]">HK</div>
+            <div className="flex flex-col">
+              <span className="text-[10px] font-black italic">حمزة القبة</span>
+              <span className="text-[8px] opacity-50 uppercase tracking-tighter">Lead Developer</span>
+            </div>
+          </div>
+          
+          <button onClick={() => setIsDarkMode(!isDarkMode)} className={`w-full p-3 rounded-xl flex items-center justify-center md:justify-between transition-all ${glassStyle} hover:scale-[1.02]`}>
+            <span className="hidden md:block text-[10px] font-bold">{isDarkMode ? 'الوضع النهاري' : 'الوضع الليلي'}</span>
+            {isDarkMode ? <Sun size={16} className="text-yellow-400" /> : <Moon size={16} className="text-indigo-400" />}
           </button>
-        </div>
-
-        <div className="mt-auto space-y-2">
-           <div className={`p-2 rounded-lg hidden md:block text-center ${neumorphicIn}`}>
-              <div className="text-[8px] font-bold text-[#6e48aa] uppercase">المطور</div>
-              <div className="text-[10px] font-black italic">حمزة القبة</div>
-           </div>
-           
-           <button onClick={() => setIsDarkMode(!isDarkMode)} className={`flex items-center justify-center md:justify-between w-full p-2.5 rounded-lg transition-all ${neumorphicOut} active:scale-95`}>
-              <span className="hidden md:block text-[9px] font-bold uppercase">{isDarkMode ? 'نهاري' : 'ليلي'}</span>
-              {isDarkMode ? <Sun size={14} className="text-[#00d2ff]" /> : <Moon size={14} className="text-[#9d50bb]" />}
-           </button>
         </div>
       </aside>
 
-      {/* Main Content */}
+      {/* Main Experience Area */}
       <main className="flex-1 flex flex-col relative">
-        <header className={`h-12 flex items-center justify-between px-6 m-2 rounded-xl transition-all ${neumorphicOut} backdrop-blur-sm`}>
-          <div className="flex items-center gap-2">
-            <div className="w-2 h-2 rounded-full bg-[#00d2ff] shadow-[0_0_8px_#00d2ff]" />
-            <span className="text-[9px] font-bold tracking-[0.2em] opacity-60">ELKOPA V2.5</span>
-          </div>
-          <button onClick={() => setShowSettings(!showSettings)} className={`p-1.5 rounded-lg transition-all ${neumorphicOut} hover:text-[#9d50bb]`}>
-            <Settings size={14} />
-          </button>
-        </header>
-
-        {/* Settings Modal */}
-        {showSettings && (
-          <div className="absolute inset-0 z-50 flex items-center justify-center p-4 bg-black/20 backdrop-blur-sm">
-            <div className={`w-64 p-5 rounded-2xl ${neumorphicOut} ${isDarkMode ? 'bg-[#0f172a]' : 'bg-white'}`}>
-              <div className="flex justify-between items-center mb-4">
-                <h3 className="text-xs font-black text-[#00d2ff]">الإعدادات</h3>
-                <button onClick={() => setShowSettings(false)}><X size={14} /></button>
-              </div>
-              <div className="space-y-3">
-                <button onClick={() => setIsDarkMode(!isDarkMode)} className={`w-full p-2.5 rounded-lg text-[10px] flex justify-between items-center ${neumorphicIn}`}>
-                   <span>تبديل الوضع</span>
-                   {isDarkMode ? <Sun size={12} /> : <Moon size={12} />}
-                </button>
-                <button onClick={clearChat} className={`w-full p-2.5 rounded-lg text-[10px] flex justify-between items-center text-red-500 ${neumorphicIn}`}>
-                   <span>تصفير المحادثة</span>
-                   <RotateCcw size={12} />
-                </button>
-              </div>
+        {/* Dynamic Header */}
+        <header className="h-16 flex items-center justify-between px-8 z-20">
+          <div className="flex items-center gap-4">
+            <div className={`flex items-center gap-2 px-3 py-1.5 rounded-full ${glassStyle}`}>
+              <div className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse" />
+              <span className="text-[10px] font-black tracking-widest uppercase">System Online</span>
+            </div>
+            <div className="hidden lg:flex items-center gap-2 text-[10px] font-bold opacity-40">
+              <Globe size={12} />
+              <span>v2.5.0 STABLE</span>
             </div>
           </div>
-        )}
+          
+          <div className="flex items-center gap-3">
+            <button onClick={() => setShowSettings(!showSettings)} className={`p-2 rounded-xl transition-all ${glassStyle} hover:text-[#00d2ff]`}>
+              <Settings size={18} />
+            </button>
+          </div>
+        </header>
 
-        {/* Chat Area */}
-        <div className="flex-1 overflow-y-auto px-4 md:px-20 py-4 space-y-6 scrollbar-hide">
+        {/* Chat Feed */}
+        <div className="flex-1 overflow-y-auto px-4 md:px-24 lg:px-48 py-8 space-y-8 scrollbar-hide">
           {messages.length === 0 ? (
-            <div className="h-full flex flex-col items-center justify-center opacity-50">
-              <Cpu size={40} className="text-[#00d2ff] mb-2 animate-pulse" />
-              <h2 className="text-xl font-black italic tracking-tighter">ELKOPA 3D</h2>
-              <p className="text-[9px] uppercase tracking-widest font-bold">Hamza Elkopa Edition</p>
+            <div className="h-full flex flex-col items-center justify-center text-center space-y-6">
+              <div className="relative">
+                <div className="absolute -inset-4 bg-[#00d2ff] rounded-full blur-2xl opacity-10 animate-pulse"></div>
+                <Cpu size={64} className="text-[#00d2ff] relative" />
+              </div>
+              <div>
+                <h2 className="text-3xl font-black tracking-tighter mb-2">كيف يمكنني خدمتك اليوم؟</h2>
+                <p className="text-sm opacity-40 max-w-md mx-auto leading-relaxed font-medium">
+                  نظام Elkopa AI المتطور، بوابتك لتجربة ذكاء اصطناعي تفوق التوقعات، تحت إشراف المطور حمزة القبة.
+                </p>
+              </div>
+              <div className="flex flex-wrap justify-center gap-3 pt-4">
+                {['برمجة متطورة', 'تحليل بيانات', 'تصميم واجهات'].map((tag, i) => (
+                  <span key={i} className={`px-4 py-2 rounded-full text-[10px] font-black uppercase tracking-widest ${glassStyle} cursor-pointer hover:border-[#00d2ff] transition-colors`}>
+                    {tag}
+                  </span>
+                ))}
+              </div>
             </div>
           ) : (
             messages.map((msg, idx) => (
-              <div key={idx} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
-                <div className={`flex gap-3 max-w-[85%] ${msg.role === 'user' ? 'flex-row-reverse' : 'flex-row'}`}>
-                  <div className={`w-8 h-8 rounded-lg flex-shrink-0 flex items-center justify-center ${neumorphicOut}`}>
-                    {msg.role === 'user' ? <User size={14} className="text-[#9d50bb]" /> : <Cpu size={14} className="text-[#00d2ff]" />}
+              <div key={idx} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'} animate-in fade-in slide-in-from-bottom-4 duration-500`}>
+                <div className={`flex gap-4 max-w-[85%] ${msg.role === 'user' ? 'flex-row-reverse' : 'flex-row'}`}>
+                  <div className={`w-10 h-10 rounded-2xl flex-shrink-0 flex items-center justify-center transition-all ${msg.role === 'user' ? 'bg-[#9d50bb]' : glassStyle}`}>
+                    {msg.role === 'user' ? <User size={18} className="text-white" /> : <Sparkles size={18} className="text-[#00d2ff]" />}
                   </div>
-                  <div className={`p-4 rounded-2xl ${msg.role === 'user' ? 'bg-[#1e293b] text-white' : `${neumorphicOut} bg-white/40`}`}>
-                    {msg.image && <img src={msg.image} className="rounded-lg mb-2 max-w-[180px]" alt="user-upload" />}
-                    <div className="leading-relaxed font-semibold">{msg.content}</div>
-                    <div className="text-[8px] mt-2 opacity-30 text-left">{msg.time}</div>
+                  <div className={`group relative p-5 rounded-3xl transition-all ${
+                    msg.role === 'user' 
+                    ? 'bg-gradient-to-br from-slate-800 to-black text-white shadow-2xl' 
+                    : `${glassStyle} shadow-lg`
+                  }`}>
+                    {msg.image && <img src={msg.image} className="rounded-xl mb-4 max-w-xs border border-white/10 shadow-lg" alt="Upload" />}
+                    <div className="leading-relaxed text-[14px] font-medium selection:bg-[#00d2ff] selection:text-black">
+                      {msg.content}
+                    </div>
+                    <div className="mt-3 flex items-center justify-between opacity-30 group-hover:opacity-100 transition-opacity">
+                      <span className="text-[9px] font-bold">{msg.time}</span>
+                      {msg.role === 'bot' && <div className="flex gap-2"><RefreshCw size={10} className="cursor-pointer hover:text-[#00d2ff]" /></div>}
+                    </div>
+                    {msg.sources && (
+                      <div className="mt-4 pt-3 border-t border-white/5 flex flex-wrap gap-2">
+                        {msg.sources.map((s, i) => (
+                          <a key={i} href={s.uri} target="_blank" rel="noreferrer" className="text-[9px] px-2.5 py-1 rounded-lg bg-white/5 hover:bg-[#00d2ff]/20 transition-colors border border-white/5">
+                            {s.title?.substring(0, 20)}...
+                          </a>
+                        ))}
+                      </div>
+                    )}
                   </div>
                 </div>
               </div>
             ))
           )}
           {isLoading && (
-            <div className="flex items-center gap-2 px-6">
-              <RefreshCw size={12} className="animate-spin text-[#00d2ff]" />
-              <span className="text-[9px] font-bold opacity-40">جاري المعالجة...</span>
+            <div className="flex items-center gap-3 px-6 opacity-60">
+              <div className="flex gap-1">
+                <div className="w-1.5 h-1.5 bg-[#00d2ff] rounded-full animate-bounce [animation-delay:-0.3s]" />
+                <div className="w-1.5 h-1.5 bg-[#9d50bb] rounded-full animate-bounce [animation-delay:-0.15s]" />
+                <div className="w-1.5 h-1.5 bg-[#00d2ff] rounded-full animate-bounce" />
+              </div>
+              <span className="text-[10px] font-black uppercase tracking-[0.2em]">Analyzing...</span>
             </div>
           )}
           <div ref={messagesEndRef} />
         </div>
 
-        {/* Input Area */}
-        <div className="p-3 md:p-6">
-          <form onSubmit={handleSend} className="max-w-3xl mx-auto relative">
-            <div className={`flex items-center gap-2 p-1.5 rounded-2xl transition-all ${neumorphicOut} backdrop-blur-md`}>
-              <textarea
-                value={input}
-                onChange={(e) => setInput(e.target.value)}
-                onKeyDown={(e) => e.key === 'Enter' && !e.shiftKey && handleSend(e)}
-                placeholder="اسأل نظام elkopa..."
-                className="flex-1 bg-transparent px-4 py-3 outline-none resize-none text-[13px] min-h-[40px] max-h-32 placeholder:text-slate-400 font-medium"
-                rows={1}
-              />
-              <div className="flex items-center gap-1.5 pr-2">
-                <label className={`p-2 rounded-full cursor-pointer transition-all ${neumorphicOut} hover:text-[#00d2ff]`}>
-                  <ImageIcon size={14} />
-                  <input type="file" className="hidden" accept="image/*" onChange={(e) => {
-                    const reader = new FileReader();
-                    if(e.target.files[0]) {
-                      reader.onload = () => setAttachedImage(reader.result);
-                      reader.readAsDataURL(e.target.files[0]);
-                    }
-                  }} />
-                </label>
-                <button type="submit" disabled={isLoading} className={`p-2.5 rounded-full bg-gradient-to-r from-[#00d2ff] to-[#9d50bb] text-white shadow-lg active:scale-90 transition-all ${isLoading ? 'opacity-50' : ''}`}>
-                  <Send size={14} />
+        {/* Premium Input Dashboard */}
+        <div className="p-4 md:p-8">
+          <div className="max-w-4xl mx-auto">
+            <form onSubmit={handleSend} className={`relative p-2 rounded-[2rem] transition-all shadow-2xl ${glassStyle}`}>
+              <div className="flex items-center gap-2">
+                <textarea
+                  value={input}
+                  onChange={(e) => setInput(e.target.value)}
+                  onKeyDown={(e) => e.key === 'Enter' && !e.shiftKey && handleSend(e)}
+                  placeholder="أدخل استفسارك هنا..."
+                  className="flex-1 bg-transparent px-6 py-4 outline-none resize-none text-[15px] min-h-[56px] max-h-48 placeholder:text-slate-500 font-semibold"
+                  rows={1}
+                />
+                
+                <div className="flex items-center gap-2 px-3">
+                  <label className={`p-3 rounded-2xl cursor-pointer transition-all hover:bg-white/10 text-slate-400 hover:text-[#00d2ff]`}>
+                    <ImageIcon size={20} />
+                    <input type="file" className="hidden" accept="image/*" onChange={(e) => {
+                      const reader = new FileReader();
+                      if(e.target.files[0]) {
+                        reader.onload = () => setAttachedImage(reader.result);
+                        reader.readAsDataURL(e.target.files[0]);
+                      }
+                    }} />
+                  </label>
+                  
+                  <button 
+                    type="submit" 
+                    disabled={(!input.trim() && !attachedImage) || isLoading}
+                    className={`h-12 w-12 rounded-2xl flex items-center justify-center transition-all ${
+                      (!input.trim() && !attachedImage) || isLoading 
+                      ? 'opacity-20 grayscale' 
+                      : 'bg-gradient-to-r from-[#00d2ff] to-[#9d50bb] text-white shadow-[0_4px_15px_rgba(0,210,255,0.4)] hover:scale-105 active:scale-95'
+                    }`}
+                  >
+                    <Send size={20} className="mr-0.5" />
+                  </button>
+                </div>
+              </div>
+            </form>
+            <div className="flex justify-center items-center gap-6 mt-4">
+               <span className="text-[8px] font-black uppercase tracking-[0.4em] opacity-30">Security Tier 1</span>
+               <div className="h-1 w-1 rounded-full bg-slate-700" />
+               <span className="text-[8px] font-black uppercase tracking-[0.4em] opacity-30 italic underline decoration-[#9d50bb]">HK Systems Division</span>
+            </div>
+          </div>
+        </div>
+
+        {/* Settings Overlay */}
+        {showSettings && (
+          <div className="absolute inset-0 z-50 flex items-center justify-center p-6 bg-black/40 backdrop-blur-md animate-in fade-in duration-300">
+            <div className={`w-full max-w-md p-8 rounded-[2.5rem] shadow-2xl ${isDarkMode ? 'bg-[#0f172a]' : 'bg-white'} border border-white/10`}>
+              <div className="flex justify-between items-center mb-8">
+                <div>
+                  <h3 className="text-xl font-black italic tracking-tighter text-transparent bg-clip-text bg-gradient-to-r from-[#00d2ff] to-[#9d50bb]">نظام التحكم</h3>
+                  <p className="text-[10px] opacity-40 uppercase font-bold">System Configuration</p>
+                </div>
+                <button onClick={() => setShowSettings(false)} className={`p-2 rounded-full ${glassStyle} hover:rotate-90 transition-transform`}>
+                  <X size={16} />
                 </button>
               </div>
+              
+              <div className="space-y-4">
+                <div className={`p-4 rounded-2xl ${glassStyle} flex justify-between items-center group cursor-pointer hover:border-[#00d2ff]/50`}>
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 rounded-lg bg-indigo-500/10 text-indigo-500"><ShieldCheck size={16}/></div>
+                    <span className="text-xs font-bold">تشفير البيانات النهاية</span>
+                  </div>
+                  <div className="w-8 h-4 rounded-full bg-green-500/20 border border-green-500/50 relative">
+                    <div className="absolute right-1 top-1 w-2 h-2 rounded-full bg-green-500" />
+                  </div>
+                </div>
+                
+                <button onClick={clearChat} className={`w-full p-4 rounded-2xl ${glassStyle} flex justify-between items-center hover:bg-red-500/10 group transition-colors`}>
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 rounded-lg bg-red-500/10 text-red-500 group-hover:animate-spin"><RotateCcw size={16}/></div>
+                    <span className="text-xs font-bold">إعادة ضبط الذاكرة</span>
+                  </div>
+                  <Trash2 size={14} className="opacity-30" />
+                </button>
+              </div>
+              
+              <button 
+                onClick={() => setShowSettings(false)}
+                className="w-full mt-8 py-4 rounded-2xl bg-gradient-to-r from-[#00d2ff] to-[#9d50bb] text-white text-xs font-black shadow-lg hover:brightness-110 transition-all active:scale-95"
+              >
+                تحديث الإعدادات
+              </button>
             </div>
-            <div className="text-center mt-2">
-               <span className="text-[7px] font-black uppercase tracking-[0.3em] opacity-40 flex items-center justify-center gap-1">
-                 <ShieldCheck size={8} /> محمية بنظام حمزة القبة التقني
-               </span>
-            </div>
-          </form>
-        </div>
+          </div>
+        )}
       </main>
     </div>
   );
