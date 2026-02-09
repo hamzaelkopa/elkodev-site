@@ -1,359 +1,476 @@
-import React, { useState, useEffect, useRef } from 'react';
-import * as THREE from 'three';
-import { 
-  Send, 
-  Bot, 
-  User, 
-  PlusCircle, 
-  Image as ImageIcon, 
-  Moon, 
-  Sun, 
-  Trash2, 
-  Search,
-  ChevronRight,
-  Sparkles,
-  MessageSquare,
-  Settings,
-  Layers,
-  X,
-  ShieldCheck,
-  Cpu,
-  RotateCcw
-} from 'lucide-react';
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>doncod.life | Experience 3.0</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@300;400;700;900&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #6366f1;
+            --secondary: #a855f7;
+            --accent: #00d2ff;
+            --bg-dark: #0f172a;
+        }
+        
+        body { 
+            font-family: 'Tajawal', sans-serif; 
+            background-color: var(--bg-dark);
+            color: #f8fafc;
+            overflow: hidden;
+            height: 100vh;
+        }
 
-const apiKey = ""; 
+        /* Glassmorphism Ultra */
+        .glass { 
+            background: rgba(30, 41, 59, 0.4); 
+            backdrop-filter: blur(20px) saturate(180%); 
+            border: 1px solid rgba(255, 255, 255, 0.1); 
+            border-radius: 1.5rem; 
+        }
 
-// --- 3D Scene Background ---
-const LuxuryBackground = ({ isDarkMode }) => {
-  const mountRef = useRef(null);
+        .glass-card {
+            background: rgba(255, 255, 255, 0.03);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+        .glass-card:hover {
+            background: rgba(255, 255, 255, 0.07);
+            transform: translateY(-5px) scale(1.02);
+            border-color: var(--primary);
+        }
 
-  useEffect(() => {
-    const scene = new THREE.Scene();
-    const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
-    const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
-    
-    renderer.setSize(window.innerWidth, window.innerHeight);
-    renderer.setPixelRatio(window.devicePixelRatio);
-    mountRef.current.appendChild(renderer.domElement);
+        .timer-glow {
+            text-shadow: 0 0 30px rgba(99, 102, 241, 0.6);
+            font-size: 5rem;
+            letter-spacing: -2px;
+        }
 
-    const brainGroup = new THREE.Group();
-    
-    const coreGeom = new THREE.IcosahedronGeometry(4, 1);
-    const coreMat = new THREE.MeshPhongMaterial({ 
-      color: 0x00d2ff, 
-      wireframe: true,
-      transparent: true,
-      opacity: 0.15
-    });
-    const core = new THREE.Mesh(coreGeom, coreMat);
-    brainGroup.add(core);
+        .sidebar-item {
+            position: relative;
+            transition: all 0.3s;
+        }
+        .sidebar-active::before {
+            content: '';
+            position: absolute;
+            right: -1rem;
+            height: 70%;
+            width: 4px;
+            background: var(--primary);
+            border-radius: 4px 0 0 4px;
+            box-shadow: -5px 0 20px var(--primary);
+        }
 
-    const outerGeom = new THREE.SphereGeometry(10, 32, 32);
-    const outerMat = new THREE.PointsMaterial({
-      size: 0.08,
-      color: 0x9d50bb,
-      transparent: true,
-      opacity: 0.3
-    });
-    const outer = new THREE.Points(outerGeom, outerMat);
-    brainGroup.add(outer);
+        #canvas-bg { 
+            position: fixed; 
+            top: 0; 
+            left: 0; 
+            z-index: -1; 
+        }
 
-    scene.add(brainGroup);
-    const light = new THREE.PointLight(0xffffff, 1);
-    light.position.set(10, 20, 30);
-    scene.add(light);
-    scene.add(new THREE.AmbientLight(0x404040, 1.5));
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar { width: 4px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 10px; }
 
-    camera.position.z = 20;
+        .view-section {
+            animation: fadeIn 0.6s ease-out;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
 
-    const animate = () => {
-      requestAnimationFrame(animate);
-      brainGroup.rotation.y += 0.001;
-      renderer.render(scene, camera);
-    };
-    animate();
+        .gradient-text {
+            background: linear-gradient(90deg, #fff, var(--primary));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+    </style>
+</head>
+<body class="antialiased">
 
-    const handleResize = () => {
-      camera.aspect = window.innerWidth / window.innerHeight;
-      camera.updateProjectionMatrix();
-      renderer.setSize(window.innerWidth, window.innerHeight);
-    };
-    window.addEventListener('resize', handleResize);
-    return () => {
-      window.removeEventListener('resize', handleResize);
-      mountRef.current?.removeChild(renderer.domElement);
-    };
-  }, [isDarkMode]);
+    <!-- 3D Environment -->
+    <canvas id="canvas-bg"></canvas>
 
-  return <div ref={mountRef} className={`fixed inset-0 -z-10 transition-colors duration-1000 ${isDarkMode ? 'bg-slate-950' : 'bg-[#f8fafc]'}`} />;
-};
-
-const App = () => {
-  const [messages, setMessages] = useState([]);
-  const [input, setInput] = useState('');
-  const [isLoading, setIsLoading] = useState(false);
-  const [isDarkMode, setIsDarkMode] = useState(false);
-  const [attachedImage, setAttachedImage] = useState(null);
-  const [showSettings, setShowSettings] = useState(false);
-  const messagesEndRef = useRef(null);
-
-  const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  };
-
-  useEffect(() => {
-    scrollToBottom();
-  }, [messages, isLoading]);
-
-  const handleSend = async (e) => {
-    e.preventDefault();
-    if (!input.trim() && !attachedImage) return;
-
-    const userMsg = { 
-      role: 'user', 
-      content: input, 
-      image: attachedImage, 
-      time: new Date().toLocaleTimeString('ar-EG', { hour: '2-digit', minute: '2-digit' }) 
-    };
-    
-    setMessages(prev => [...prev, userMsg]);
-    setInput('');
-    setAttachedImage(null);
-    setIsLoading(true);
-
-    try {
-      const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${apiKey}`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          contents: [{
-            parts: [{ text: input }, ...(userMsg.image ? [{ inlineData: { mimeType: "image/png", data: userMsg.image.split(',')[1] } }] : [])]
-          }],
-          tools: [{ "google_search": {} }],
-          systemInstruction: { parts: [{ text: "أنت elkopa، مساعد ذكاء اصطناعي فائق صممه المطور حمزة القبة. لغتك عربية فصيحة." }] }
-        })
-      });
-
-      const data = await response.json();
-      const botMsg = { 
-        role: 'bot', 
-        content: data.candidates?.[0]?.content?.parts?.[0]?.text || "عذراً، حدث خطأ.", 
-        time: new Date().toLocaleTimeString('ar-EG', { hour: '2-digit', minute: '2-digit' }),
-        sources: data.candidates?.[0]?.groundingMetadata?.groundingAttributions?.map(a => ({ uri: a.web?.uri, title: a.web?.title }))
-      };
-
-      setMessages(prev => [...prev, botMsg]);
-    } catch (err) {
-      setMessages(prev => [...prev, { role: 'bot', content: "خطأ في الشبكة.", time: "" }]);
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const clearChat = () => {
-    setMessages([]);
-    setAttachedImage(null);
-    setShowSettings(false);
-  };
-
-  // Minimized Neumorphic Styles
-  const neumorphicIn = isDarkMode 
-    ? `shadow-[inset_2px_2px_5px_#020617,inset_-2px_-2px_5px_#1e293b] border-white/5` 
-    : `shadow-[inset_2px_2px_5px_#d1d9e6,inset_-2px_-2px_5px_#ffffff] border-slate-200/50`;
-  
-  const neumorphicOut = isDarkMode 
-    ? `shadow-[3px_3px_7px_#020617,-3px_-3px_7px_#1e293b] border-white/10` 
-    : `shadow-[3px_3px_7px_#d1d9e6,-3px_-3px_7px_#ffffff] border-slate-200/60`;
-
-  const textStyle = isDarkMode ? "text-slate-200" : "text-black";
-
-  return (
-    <div className={`flex h-screen w-full font-sans transition-all duration-700 overflow-hidden text-[13px] ${textStyle}`} dir="rtl">
-      <LuxuryBackground isDarkMode={isDarkMode} />
-
-      {/* Sidebar - Minimized */}
-      <aside className={`w-14 md:w-52 flex flex-col z-30 transition-all p-2 ${isDarkMode ? 'bg-slate-950/70' : 'bg-white/70'}`}>
-        <div className={`p-3 rounded-xl mb-4 flex flex-col items-center gap-1 transition-all ${neumorphicOut} border-t border-t-[#00d2ff]`}>
-          <div className="w-8 h-8 bg-gradient-to-br from-[#00d2ff] via-[#9d50bb] to-[#6e48aa] rounded-lg flex items-center justify-center shadow-md">
-             <Cpu className="text-white w-5 h-5" />
-          </div>
-          <h1 className="text-[14px] font-black italic tracking-widest hidden md:block text-transparent bg-clip-text bg-gradient-to-r from-[#00d2ff] to-[#9d50bb]">ELKOPA</h1>
-        </div>
-
-        <div className="flex-1 space-y-3 overflow-y-auto scrollbar-hide">
-          <button 
-            onClick={clearChat}
-            className={`w-full flex items-center justify-center md:justify-start gap-2 p-3 rounded-lg transition-all active:scale-95 ${neumorphicOut} hover:scale-[1.02] group`}
-          >
-            <PlusCircle size={16} className="text-[#00d2ff]" />
-            <span className="hidden md:block font-bold text-[10px] uppercase">جديد</span>
-          </button>
-
-          <button 
-            onClick={clearChat}
-            className={`w-full flex items-center justify-center md:justify-start gap-2 p-3 rounded-lg transition-all active:scale-95 ${neumorphicOut} hover:text-red-500 group`}
-          >
-            <Trash2 size={16} className="text-slate-400 group-hover:text-red-500" />
-            <span className="hidden md:block font-bold text-[10px] uppercase">مسح</span>
-          </button>
-
-          <div className={`p-2 rounded-lg hidden md:block text-center transition-all ${neumorphicIn} border-b border-b-[#9d50bb]/20`}>
-            <div className="text-[8px] font-bold text-[#6e48aa] uppercase">المطور</div>
-            <div className="text-[10px] font-black">حمزة القبة</div>
-          </div>
-        </div>
-
-        <button 
-          onClick={() => setIsDarkMode(!isDarkMode)}
-          className={`flex items-center justify-center md:justify-between w-full p-3 rounded-lg transition-all ${neumorphicOut} active:scale-95 mt-2`}
-        >
-          <span className="hidden md:block text-[10px] font-bold uppercase">{isDarkMode ? 'نهار' : 'ليل'}</span>
-          {isDarkMode ? <Sun size={14} className="text-[#00d2ff]" /> : <Moon size={14} className="text-[#9d50bb]" />}
-        </button>
-      </aside>
-
-      {/* Main Content */}
-      <main className="flex-1 flex flex-col relative p-2 md:p-3">
-        <header className={`h-11 flex items-center justify-between px-6 rounded-xl mb-2 transition-all ${neumorphicOut} border-r-2 border-r-[#00d2ff]`}>
-          <div className="flex items-center gap-2">
-            <div className="w-2 h-2 rounded-full bg-[#00d2ff] animate-pulse" />
-            <span className="text-[9px] font-bold tracking-[0.3em] opacity-60 uppercase">elkopa core</span>
-          </div>
-          <button onClick={() => setShowSettings(!showSettings)} className={`p-2 rounded-lg transition-all ${neumorphicOut} hover:text-[#9d50bb]`}>
-            <Settings size={14} />
-          </button>
-        </header>
-
-        {/* Settings Modal - Smaller */}
-        {showSettings && (
-          <div className="absolute inset-0 z-50 flex items-center justify-center p-4 bg-black/10 backdrop-blur-[2px]">
-            <div className={`w-full max-w-xs p-6 rounded-3xl ${neumorphicOut} ${isDarkMode ? 'bg-slate-900' : 'bg-white'} border border-[#00d2ff]/20`}>
-              <div className="flex justify-between items-center mb-4">
-                <h3 className="text-sm font-black italic text-transparent bg-clip-text bg-gradient-to-r from-[#00d2ff] to-[#9d50bb]">الإعدادات</h3>
-                <button onClick={() => setShowSettings(false)} className={`p-1.5 rounded-full ${neumorphicOut}`}>
-                  <X size={12} />
+    <div class="flex h-screen relative z-10">
+        <!-- Sidebar Modern -->
+        <aside class="w-64 bg-slate-900/50 backdrop-blur-3xl border-l border-white/5 flex flex-col p-6">
+            <div class="mb-10 text-center">
+                <div class="inline-block p-3 rounded-2xl bg-gradient-to-br from-indigo-500 to-purple-600 shadow-2xl shadow-indigo-500/20 mb-4">
+                    <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/>
+                    </svg>
+                </div>
+                <h1 class="text-xl font-black tracking-tighter">DONCOD<span class="text-indigo-400">.LIFE</span></h1>
+            </div>
+            
+            <nav class="flex-1 space-y-4">
+                <button onclick="switchView('main')" id="nav-main" class="sidebar-item sidebar-active w-full flex items-center gap-4 p-3 rounded-xl text-sm font-bold transition-all text-indigo-400">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"></path></svg>
+                    الرئيسية
                 </button>
-              </div>
-              
-              <div className="space-y-4">
-                <div className={`p-3 rounded-xl ${neumorphicIn} flex justify-between items-center`}>
-                    <span className="text-[11px] font-bold">المظهر</span>
-                    <button onClick={() => setIsDarkMode(!isDarkMode)} className={`p-1.5 rounded-md ${neumorphicOut}`}>
-                      {isDarkMode ? <Sun size={12} /> : <Moon size={12} />}
-                    </button>
-                </div>
-                <div className={`p-3 rounded-xl ${neumorphicIn} flex justify-between items-center`}>
-                    <span className="text-[11px] font-bold text-red-500">مسح الذاكرة</span>
-                    <button onClick={clearChat} className={`p-1.5 rounded-md ${neumorphicOut}`}>
-                      <RotateCcw size={12} />
-                    </button>
-                </div>
-              </div>
-              
-              <button 
-                onClick={() => setShowSettings(false)}
-                className="w-full mt-6 py-3 rounded-xl bg-gradient-to-r from-[#00d2ff] to-[#9d50bb] text-white text-[11px] font-black shadow-md active:scale-95 transition-all"
-              >
-                حفظ
-              </button>
-            </div>
-          </div>
-        )}
+                <button onclick="switchView('stats')" id="nav-stats" class="sidebar-item w-full flex items-center gap-4 p-3 rounded-xl text-sm font-bold text-slate-400 hover:text-white transition-all">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path></svg>
+                    الإحصائيات
+                </button>
+                <button onclick="toggleAIChat()" class="w-full flex items-center gap-4 p-3 rounded-xl text-sm font-bold text-slate-400 hover:text-white transition-all group">
+                    <span class="relative flex h-3 w-3">
+                        <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-indigo-400 opacity-75"></span>
+                        <span class="relative inline-flex rounded-full h-3 w-3 bg-indigo-500"></span>
+                    </span>
+                    مساعد الذكاء الاصطناعي
+                </button>
+            </nav>
 
-        <div className="flex-1 overflow-y-auto px-2 md:px-16 py-4 space-y-6 scrollbar-hide">
-          {messages.length === 0 ? (
-            <div className="h-full flex flex-col items-center justify-center space-y-4">
-              <div className={`p-8 rounded-full ${neumorphicOut} border border-[#00d2ff]/10`}>
-                <Cpu size={40} className="text-[#00d2ff]" />
-              </div>
-              <div className="text-center">
-                <h2 className={`text-2xl font-black italic text-transparent bg-clip-text bg-gradient-to-r from-[#00d2ff] to-[#9d50bb]`}>elkopa 3D</h2>
-                <p className="text-slate-400 text-[10px] mt-1 tracking-widest font-bold uppercase underline decoration-[#9d50bb]">Hamza Elkopa</p>
-              </div>
+            <div class="mt-auto p-4 glass-card rounded-2xl border-white/10">
+                <p class="text-[10px] text-slate-500 font-bold uppercase mb-1">المطور الرئيسي</p>
+                <p class="text-sm font-black gradient-text">حمزة القبة</p>
             </div>
-          ) : (
-            messages.map((msg, idx) => (
-              <div key={idx} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
-                <div className={`flex gap-3 max-w-[85%] ${msg.role === 'user' ? 'flex-row-reverse' : 'flex-row'}`}>
-                  <div className={`w-8 h-8 rounded-lg flex-shrink-0 flex items-center justify-center transition-all ${neumorphicOut}`}>
-                    {msg.role === 'user' ? <User size={14} className="text-[#9d50bb]" /> : <Cpu size={14} className="text-[#00d2ff]" />}
-                  </div>
-                  <div className={`p-4 rounded-2xl ${
-                    msg.role === 'user' 
-                    ? `bg-slate-900 text-white shadow-md` 
-                    : `${neumorphicOut} bg-white/40 backdrop-blur-sm`
-                  }`}>
-                    {msg.image && <img src={msg.image} className={`rounded-xl mb-2 max-w-[200px] border border-[#00d2ff]/20`} alt="Upload" />}
-                    <div className={`whitespace-pre-wrap text-[13px] leading-snug font-semibold ${msg.role === 'user' ? 'text-white' : (isDarkMode ? 'text-slate-100' : 'text-black')}`}>
-                      {msg.content}
+        </aside>
+
+        <!-- Main Workspace -->
+        <main class="flex-1 overflow-hidden flex flex-col relative">
+            
+            <header class="p-8 flex justify-between items-center bg-slate-900/20">
+                <div>
+                    <h2 class="text-2xl font-black text-white" id="greeting-text">طابت أوقاتك</h2>
+                    <p id="date-now" class="text-indigo-400/60 text-xs font-bold mt-1"></p>
+                </div>
+                <div class="flex gap-4">
+                    <div class="glass p-2 px-4 flex items-center gap-3">
+                        <div class="w-2 h-2 rounded-full bg-green-500 animate-pulse"></div>
+                        <span class="text-[10px] font-black uppercase tracking-widest text-slate-300">متصل الآن</span>
                     </div>
-                    {msg.sources && (
-                      <div className="mt-3 pt-2 border-t border-slate-400/10 flex flex-wrap gap-2">
-                        {msg.sources.map((s, i) => (
-                          <a key={i} href={s.uri} target="_blank" rel="noreferrer" className={`text-[8px] px-2 py-1 rounded-md ${neumorphicOut} border border-[#00d2ff]/10`}>{s.title?.substring(0, 15)}</a>
-                        ))}
-                      </div>
-                    )}
-                  </div>
                 </div>
-              </div>
-            ))
-          )}
-          {isLoading && (
-            <div className="flex items-center gap-2 px-6">
-              <div className="w-1 h-1 bg-[#00d2ff] rounded-full animate-ping" />
-              <span className="text-[9px] font-bold opacity-40 uppercase tracking-widest">Processing...</span>
-            </div>
-          )}
-          <div ref={messagesEndRef} />
-        </div>
+            </header>
 
-        {/* Minimized Input */}
-        <div className="p-2 md:p-4">
-          <form onSubmit={handleSend} className="max-w-3xl mx-auto relative">
-            <div className={`flex items-center gap-2 p-1.5 rounded-[1.5rem] transition-all ${neumorphicOut} border-b border-b-[#9d50bb]/20`}>
-              <textarea
-                value={input}
-                onChange={(e) => setInput(e.target.value)}
-                onKeyDown={(e) => e.key === 'Enter' && !e.shiftKey && handleSend(e)}
-                placeholder="اسأل elkopa..."
-                className={`flex-1 bg-transparent px-5 py-3 outline-none resize-none text-[14px] min-h-[40px] max-h-32 placeholder:text-slate-400 font-medium ${isDarkMode ? 'text-white' : 'text-black'}`}
-                rows={1}
-              />
-              
-              <div className="flex items-center gap-1.5 pr-2">
-                <label className={`p-2.5 rounded-full cursor-pointer transition-all ${neumorphicOut} hover:text-[#00d2ff] text-slate-500`}>
-                  <ImageIcon size={16} />
-                  <input type="file" className="hidden" accept="image/*" onChange={(e) => {
-                    const reader = new FileReader();
-                    if(e.target.files[0]) {
-                      reader.onload = () => setAttachedImage(reader.result);
-                      reader.readAsDataURL(e.target.files[0]);
-                    }
-                  }} />
-                </label>
+            <div class="flex-1 overflow-y-auto p-8 pt-0">
                 
-                <button 
-                  type="submit"
-                  disabled={(!input.trim() && !attachedImage) || isLoading}
-                  className={`p-3 rounded-full transition-all ${
-                    (!input.trim() && !attachedImage) || isLoading 
-                    ? 'opacity-20' 
-                    : `bg-gradient-to-r from-[#00d2ff] to-[#9d50bb] text-white shadow-md active:scale-90`
-                  }`}
-                >
-                  <Send size={16} />
-                </button>
-              </div>
-            </div>
-            <div className="text-center mt-3">
-               <span className="text-[8px] font-black uppercase tracking-[0.2em] opacity-40">ELKOPA SYSTEM • HAMZA ELKOPA</span>
-            </div>
-          </form>
-        </div>
-      </main>
-    </div>
-  );
-};
+                <!-- Main Section -->
+                <div id="section-main" class="view-section active space-y-8">
+                    <div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
+                        
+                        <!-- 3D Timer Hub -->
+                        <div class="lg:col-span-5">
+                            <div class="glass-card p-10 text-center relative overflow-hidden group">
+                                <div class="absolute -top-20 -right-20 w-40 h-40 bg-indigo-600/20 blur-[100px] rounded-full"></div>
+                                <p class="text-[10px] font-black text-indigo-400 uppercase tracking-[0.3em] mb-6">نظام الإنتاجية</p>
+                                
+                                <div id="timer-display" class="timer-glow font-black text-white mb-10 tabular-nums">25:00</div>
+                                
+                                <div class="flex justify-center gap-4 mb-10">
+                                    <button onclick="toggleTimer()" id="timer-btn" class="bg-indigo-600 hover:bg-indigo-500 text-white px-10 py-4 rounded-2xl font-black text-sm transition-all shadow-xl shadow-indigo-600/20">ابدأ الرحلة</button>
+                                    <button onclick="resetTimer()" class="glass-card p-4 hover:bg-white/10">
+                                        <svg class="w-5 h-5 text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
+                                    </button>
+                                </div>
 
-export default App;
+                                <div class="flex gap-3 justify-center">
+                                    <button onclick="setMode(25)" class="text-[10px] font-black px-4 py-2 rounded-xl bg-indigo-600/10 text-indigo-400 border border-indigo-600/20">تركيز</button>
+                                    <button onclick="setMode(5)" class="text-[10px] font-black px-4 py-2 rounded-xl text-slate-500 hover:bg-white/5">راحة</button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Task Manager Modern -->
+                        <div class="lg:col-span-7">
+                            <div class="glass-card p-8 h-full">
+                                <div class="flex justify-between items-center mb-8">
+                                    <h3 class="text-lg font-black text-white">قائمة المهام الذكية</h3>
+                                    <span id="task-stats" class="bg-indigo-500/10 text-indigo-400 text-[10px] px-3 py-1 rounded-full font-black">0 مهام</span>
+                                </div>
+                                
+                                <form onsubmit="event.preventDefault(); addTask();" class="relative mb-6">
+                                    <input type="text" id="task-input" placeholder="ما هي الخطوة القادمة؟" class="w-full bg-white/5 border border-white/10 rounded-2xl px-6 py-4 text-sm text-white outline-none focus:border-indigo-500 transition-all placeholder:text-slate-600">
+                                    <button type="submit" class="absolute left-3 top-2 bottom-2 bg-indigo-600 text-white px-4 rounded-xl font-bold">+</button>
+                                </form>
+
+                                <div id="task-list" class="space-y-3 max-h-[300px] overflow-y-auto custom-scroll">
+                                    <!-- Tasks appear here -->
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Stats Section -->
+                <div id="section-stats" class="view-section hidden space-y-8">
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                        <div class="glass-card p-8 border-r-4 border-indigo-500">
+                            <p class="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-2">إجمالي الجلسات</p>
+                            <p id="stat-total-sessions" class="text-4xl font-black text-white">0</p>
+                        </div>
+                        <div class="glass-card p-8 border-r-4 border-cyan-500">
+                            <p class="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-2">دقائق العمل</p>
+                            <p id="stat-total-minutes" class="text-4xl font-black text-white">0</p>
+                        </div>
+                        <div class="glass-panel p-8 border-r-4 border-purple-500">
+                            <p class="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-2">الإنتاجية</p>
+                            <p id="stat-total-tasks" class="text-4xl font-black text-white">0</p>
+                        </div>
+                    </div>
+
+                    <div class="glass-card p-8 h-[400px]">
+                        <canvas id="statsChart"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <!-- AI Floating Drawer -->
+            <div id="ai-chat-drawer" class="fixed top-0 left-0 h-full w-96 bg-slate-900/90 backdrop-blur-2xl shadow-[-50px_0_100px_rgba(0,0,0,0.5)] z-50 transform -translate-x-full transition-transform duration-500 border-r border-white/10 flex flex-col">
+                <div class="p-6 border-b border-white/5 flex justify-between items-center">
+                    <div class="flex items-center gap-3">
+                        <div class="w-2 h-2 rounded-full bg-indigo-500"></div>
+                        <h3 class="text-sm font-black">المساعد الذكي Gemini</h3>
+                    </div>
+                    <button onclick="toggleAIChat()" class="text-slate-500 hover:text-white text-2xl">&times;</button>
+                </div>
+                
+                <div id="ai-chat-messages" class="flex-1 overflow-y-auto p-6 space-y-4 text-sm">
+                    <div class="bg-indigo-600/10 p-4 rounded-2xl border border-indigo-600/20 text-indigo-300">
+                        مرحباً! كيف يمكنني تحسين يومك اليوم؟ يمكنني تلخيص المهام أو تقديم نصائح للتركيز.
+                    </div>
+                </div>
+
+                <div class="p-6 bg-slate-900/50">
+                    <div class="relative">
+                        <input type="text" id="ai-input" placeholder="اكتب سؤالك هنا..." class="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-xs text-white outline-none focus:border-indigo-500">
+                        <button onclick="askAI()" id="ai-send-btn" class="absolute left-2 top-2 bottom-2 bg-indigo-600 px-4 rounded-lg text-[10px] font-bold">إرسال</button>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        const state = {
+            tasks: JSON.parse(localStorage.getItem('doncod_tasks_v2')) || [],
+            sessions: parseInt(localStorage.getItem('doncod_sessions_v2')) || 0,
+            history: JSON.parse(localStorage.getItem('doncod_history_v2')) || [12, 19, 3, 5, 2, 3, 9],
+            timerSeconds: 25 * 60,
+            timerInterval: null,
+            apiKey: ""
+        };
+
+        // --- 3D Background Logic ---
+        let scene, camera, renderer, particles, mouseX = 0, mouseY = 0;
+        
+        function init3D() {
+            scene = new THREE.Scene();
+            camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+            renderer = new THREE.WebGLRenderer({ canvas: document.getElementById('canvas-bg'), antialias: true, alpha: true });
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            renderer.setPixelRatio(window.devicePixelRatio);
+
+            // Create Starfield
+            const geometry = new THREE.BufferGeometry();
+            const vertices = [];
+            for (let i = 0; i < 5000; i++) {
+                vertices.push(THREE.MathUtils.randFloatSpread(2000), THREE.MathUtils.randFloatSpread(2000), THREE.MathUtils.randFloatSpread(2000));
+            }
+            geometry.setAttribute('position', new THREE.Float32BufferAttribute(vertices, 3));
+            const material = new THREE.PointsMaterial({ color: 0x6366f1, size: 2, transparent: true, opacity: 0.5 });
+            particles = new THREE.Points(geometry, material);
+            scene.add(particles);
+
+            camera.position.z = 500;
+
+            document.addEventListener('mousemove', (e) => {
+                mouseX = (e.clientX - window.innerWidth / 2) / 100;
+                mouseY = (e.clientY - window.innerHeight / 2) / 100;
+            });
+
+            function animate() {
+                requestAnimationFrame(animate);
+                particles.rotation.x += 0.0005;
+                particles.rotation.y += 0.0005;
+                
+                // Interaction
+                camera.position.x += (mouseX - camera.position.x) * 0.05;
+                camera.position.y += (-mouseY - camera.position.y) * 0.05;
+                camera.lookAt(scene.position);
+                
+                renderer.render(scene, camera);
+            }
+            animate();
+        }
+
+        // --- UI Logic ---
+        function switchView(view) {
+            document.querySelectorAll('.view-section').forEach(s => s.classList.add('hidden'));
+            document.querySelectorAll('.sidebar-item').forEach(i => i.classList.remove('sidebar-active', 'text-indigo-400'));
+            
+            document.getElementById(`section-${view}`).classList.remove('hidden');
+            document.getElementById(`nav-${view}`).classList.add('sidebar-active', 'text-indigo-400');
+
+            if (view === 'stats') updateChart();
+        }
+
+        function updateChart() {
+            const ctx = document.getElementById('statsChart').getContext('2d');
+            document.getElementById('stat-total-sessions').innerText = state.sessions;
+            document.getElementById('stat-total-minutes').innerText = state.sessions * 25;
+            document.getElementById('stat-total-tasks').innerText = state.tasks.filter(t => t.done).length;
+
+            if (window.myChart) window.myChart.destroy();
+            
+            window.myChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: ['السبت', 'الأحد', 'الاثنين', 'الثلاثاء', 'الأربعاء', 'الخميس', 'الجمعة'],
+                    datasets: [{
+                        data: state.history,
+                        borderColor: '#6366f1',
+                        backgroundColor: 'rgba(99, 102, 241, 0.1)',
+                        fill: true,
+                        tension: 0.4,
+                        borderWidth: 4,
+                        pointBackgroundColor: '#fff'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { display: false } },
+                    scales: {
+                        y: { display: false },
+                        x: { grid: { display: false }, ticks: { color: '#64748b' } }
+                    }
+                }
+            });
+        }
+
+        // --- Core Functions ---
+        function updateDisplay() {
+            const m = Math.floor(state.timerSeconds / 60);
+            const s = state.timerSeconds % 60;
+            document.getElementById('timer-display').innerText = `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
+        }
+
+        function toggleTimer() {
+            const btn = document.getElementById('timer-btn');
+            if (state.timerInterval) {
+                clearInterval(state.timerInterval);
+                state.timerInterval = null;
+                btn.innerText = 'استئناف';
+                btn.classList.replace('bg-red-500', 'bg-indigo-600');
+            } else {
+                btn.innerText = 'إيقاف مؤقت';
+                btn.classList.replace('bg-indigo-600', 'bg-red-500');
+                state.timerInterval = setInterval(() => {
+                    if (state.timerSeconds > 0) {
+                        state.timerSeconds--;
+                        updateDisplay();
+                    } else {
+                        state.sessions++;
+                        state.history[new Date().getDay()]++;
+                        save();
+                        resetTimer();
+                    }
+                }, 1000);
+            }
+        }
+
+        function resetTimer() {
+            clearInterval(state.timerInterval);
+            state.timerInterval = null;
+            state.timerSeconds = 25 * 60;
+            updateDisplay();
+            document.getElementById('timer-btn').innerText = 'ابدأ الرحلة';
+        }
+
+        function setMode(mins) { resetTimer(); state.timerSeconds = mins * 60; updateDisplay(); }
+
+        function addTask() {
+            const input = document.getElementById('task-input');
+            if (!input.value.trim()) return;
+            state.tasks.push({ id: Date.now(), text: input.value, done: false });
+            input.value = '';
+            save(); renderTasks();
+        }
+
+        function toggleTask(id) {
+            state.tasks = state.tasks.map(t => t.id === id ? {...t, done: !t.done} : t);
+            save(); renderTasks();
+        }
+
+        function deleteTask(id) {
+            state.tasks = state.tasks.filter(t => t.id !== id);
+            save(); renderTasks();
+        }
+
+        function save() {
+            localStorage.setItem('doncod_tasks_v2', JSON.stringify(state.tasks));
+            localStorage.setItem('doncod_sessions_v2', state.sessions);
+            localStorage.setItem('doncod_history_v2', JSON.stringify(state.history));
+        }
+
+        function renderTasks() {
+            const list = document.getElementById('task-list');
+            document.getElementById('task-stats').innerText = `${state.tasks.length} مهام`;
+            list.innerHTML = state.tasks.map(t => `
+                <div class="flex items-center justify-between p-4 glass-card rounded-xl group">
+                    <div class="flex items-center gap-4 cursor-pointer" onclick="toggleTask(${t.id})">
+                        <div class="w-5 h-5 rounded-lg border-2 border-indigo-500/30 flex items-center justify-center ${t.done ? 'bg-indigo-500 border-indigo-500' : ''}">
+                            ${t.done ? '✓' : ''}
+                        </div>
+                        <span class="${t.done ? 'line-through text-slate-600' : 'text-slate-200'} font-medium text-xs">${t.text}</span>
+                    </div>
+                    <button onclick="deleteTask(${t.id})" class="text-slate-600 hover:text-red-400 opacity-0 group-hover:opacity-100 transition-opacity">&times;</button>
+                </div>
+            `).join('') || '<p class="text-center text-slate-600 text-xs py-10">لا يوجد مهام نشطة</p>';
+        }
+
+        function toggleAIChat() { document.getElementById('ai-chat-drawer').classList.toggle('-translate-x-full'); }
+
+        async function askAI() {
+            const input = document.getElementById('ai-input');
+            const container = document.getElementById('ai-chat-messages');
+            const query = input.value.trim();
+            if (!query) return;
+
+            container.innerHTML += `<div class="bg-white/5 p-3 rounded-xl border border-white/5 text-right ml-10">${query}</div>`;
+            input.value = '';
+            
+            const thinking = document.createElement('div');
+            thinking.className = "text-[10px] text-indigo-400 animate-pulse";
+            thinking.innerText = "Gemini يحلل طلبك...";
+            container.appendChild(thinking);
+
+            try {
+                const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${state.apiKey}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ contents: [{ parts: [{ text: query }] }] })
+                });
+                const data = await res.json();
+                thinking.remove();
+                const reply = data.candidates[0].content.parts[0].text;
+                container.innerHTML += `<div class="bg-indigo-600/10 p-4 rounded-xl border border-indigo-600/20 mr-10">${reply}</div>`;
+            } catch (e) {
+                thinking.innerText = "فشل الاتصال بالذكاء الاصطناعي.";
+            }
+            container.scrollTop = container.scrollHeight;
+        }
+
+        window.onload = () => {
+            init3D();
+            renderTasks();
+            updateDisplay();
+            document.getElementById('date-now').innerText = new Intl.DateTimeFormat('ar-EG', { dateStyle: 'full' }).format(new Date());
+            
+            // Resize handling
+            window.addEventListener('resize', () => {
+                camera.aspect = window.innerWidth / window.innerHeight;
+                camera.updateProjectionMatrix();
+                renderer.setSize(window.innerWidth, window.innerHeight);
+            });
+        };
+    </script>
+</body>
+</html>
