@@ -1,295 +1,430 @@
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<title>DONCOD LIFE</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>شاشة الاختراق التفاعلية</title>
+    <style>
+        /* الإعدادات الأساسية */
+        body, html {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            background-color: black;
+            overflow: hidden;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
 
-<script src="https://cdn.tailwindcss.com"></script>
+        /* خلفية مطر الأكواد (Matrix Rain) */
+        #matrix-canvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            z-index: 1;
+            display: block;
+        }
 
-<style>
-body{font-family:sans-serif;background:#0b0f19;color:#e5e7eb}
-.card{background:#111827;border:1px solid #1f2937;border-radius:14px;padding:16px}
-.btn{background:#4f46e5;padding:10px 14px;border-radius:10px}
-.btn:disabled{opacity:.5}
-input{background:#0f172a;border:1px solid #1f2937;padding:10px;border-radius:10px;width:100%}
-</style>
+        /* حاوية المحتوى الرئيسية */
+        .overlay {
+            position: relative;
+            z-index: 2;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            background: rgba(0, 0, 0, 0.4); 
+            transition: background 0.5s ease;
+        }
+
+        /* زر الإعدادات العائم */
+        .settings-trigger {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            z-index: 100;
+            background: rgba(10, 10, 10, 0.8);
+            border: 1px solid #00ff00;
+            color: #00ff00;
+            width: 45px;
+            height: 45px;
+            border-radius: 50%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            cursor: pointer;
+            box-shadow: 0 0 15px rgba(0, 255, 0, 0.3);
+            transition: all 0.3s ease;
+        }
+
+        .settings-trigger:hover {
+            background: #00ff00;
+            color: #000;
+            box-shadow: 0 0 25px #00ff00;
+        }
+
+        /* لوحة التحكم */
+        .controls-modal {
+            position: absolute;
+            top: 80px;
+            left: 20px;
+            z-index: 99;
+            background: rgba(10, 10, 10, 0.95);
+            padding: 20px;
+            border-radius: 12px;
+            border: 1px solid #00ff00;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            box-shadow: 0 0 30px rgba(0, 0, 0, 1);
+            transform: scale(0);
+            transform-origin: top left;
+            transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        .controls-modal.active {
+            transform: scale(1);
+            opacity: 1;
+            pointer-events: all;
+        }
+
+        .modal-header {
+            color: #00ff00;
+            font-size: 0.9rem;
+            font-weight: bold;
+            border-bottom: 1px solid rgba(0, 255, 0, 0.2);
+            padding-bottom: 10px;
+            margin-bottom: 5px;
+        }
+
+        input[type="text"] {
+            background: #000;
+            border: 1px solid #00ff00;
+            color: #00ff00;
+            padding: 10px 15px;
+            border-radius: 6px;
+            outline: none;
+            font-size: 0.95rem;
+            width: 220px;
+        }
+
+        .button-group {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+        }
+
+        button {
+            background: #00ff00;
+            color: #000;
+            border: none;
+            padding: 10px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: bold;
+            font-size: 0.8rem;
+        }
+
+        button.toggle-btn {
+            background: #ff0000;
+            color: white;
+        }
+
+        button.auto-code-btn {
+            background: #0088ff;
+            color: white;
+            grid-column: span 2;
+        }
+
+        /* وضع الكود التلقائي المحاكي لـ Python */
+        #auto-code-screen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: #0d0d0d;
+            z-index: 1000;
+            display: none;
+            padding: 30px;
+            box-sizing: border-box;
+            overflow: hidden;
+            font-family: 'Fira Code', 'Consolas', 'Courier New', monospace;
+            cursor: pointer;
+            border: 5px solid #1a1a1a;
+            /* إجبار الاتجاه من اليسار لليمين للأكواد */
+            direction: ltr !important; 
+        }
+
+        #code-display {
+            white-space: pre-wrap;
+            word-break: break-all;
+            font-size: 16px;
+            line-height: 1.6;
+            text-align: left; /* المحاذاة لليسار */
+            color: #c9d1d9;
+        }
+
+        /* ألوان بايثون (Pythonic Colors) */
+        .py-keyword { color: #ff7b72; font-weight: bold; }
+        .py-func { color: #d2a8ff; }
+        .py-string { color: #a5d6ff; }
+        .py-comment { color: #8b949e; font-style: italic; }
+        .py-number { color: #79c0ff; }
+        .py-operator { color: #ff7b72; }
+        .py-builtin { color: #ffa657; }
+        .py-normal { color: #c9d1d9; }
+
+        /* أنماط الشريط المتحرك */
+        .marquee-container {
+            width: 100%;
+            background: rgba(255, 0, 0, 0.25);
+            border-top: 4px solid #ff0000;
+            border-bottom: 4px solid #ff0000;
+            padding: 25px 0;
+            overflow: hidden;
+            display: flex;
+            box-shadow: 0 0 40px rgba(255, 0, 0, 0.6);
+            transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+            opacity: 1;
+            transform: scaleY(1);
+        }
+
+        .marquee-container.hidden {
+            opacity: 0;
+            transform: scaleY(0);
+            padding: 0;
+            border-width: 0;
+            margin: 0;
+        }
+
+        .marquee-content {
+            display: flex;
+            white-space: nowrap;
+            animation: infinite-scroll 10s linear infinite;
+        }
+
+        .marquee-text {
+            font-size: 5.5rem;
+            font-weight: 900;
+            color: #ff0000;
+            text-shadow: 0 0 20px #ff0000, 0 0 40px #7a0000;
+            padding-left: 80px;
+        }
+
+        @keyframes infinite-scroll {
+            from { transform: translateX(0); }
+            to { transform: translateX(50%); }
+        }
+
+        .system-logs {
+            position: absolute;
+            bottom: 20px;
+            right: 20px;
+            color: #00ff00;
+            font-family: 'Courier New', monospace;
+            font-size: 13px;
+            text-align: right;
+            background: rgba(0,0,0,0.7);
+            padding: 10px;
+            border-right: 3px solid #00ff00;
+            pointer-events: none;
+            text-shadow: 0 0 5px #00ff00;
+            line-height: 1.5;
+            direction: rtl; /* العودة لليمين للنصوص العربية */
+        }
+    </style>
 </head>
+<body>
 
-<body class="p-4">
+    <!-- الشاشة التلقائية للكود -->
+    <div id="auto-code-screen" onclick="stopAutoCode()">
+        <div id="code-display"></div>
+    </div>
 
-<h1 class="text-xl font-bold mb-4">DONCOD LIFE — منظم الحياة</h1>
+    <!-- زر الإعدادات -->
+    <div class="settings-trigger" onclick="toggleModal()" title="إعدادات">
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
+    </div>
 
-<div class="card mb-4">
-<form id="taskForm" class="flex gap-2">
-<input id="taskInput" maxlength="120" placeholder="اكتب مهمة...">
-<button class="btn" id="addBtn">إضافة</button>
-</form>
-</div>
+    <!-- نافذة الإعدادات -->
+    <div class="controls-modal" id="settingsModal">
+        <div class="modal-header">لوحة التحكم التفاعلية</div>
+        <input type="text" id="userInput" placeholder="اكتب رسالتك هنا..." maxlength="50">
+        <div class="button-group">
+            <button onclick="updateText()">تحديث</button>
+            <button class="toggle-btn" id="toggleBtn" onclick="toggleMarquee()">إخفاء</button>
+            <button class="auto-code-btn" onclick="startAutoCode()">تفعيل وضع بايثون التلقائي 🚀</button>
+        </div>
+    </div>
 
-<div class="card mb-4">
-<h2 class="font-bold mb-2">المهام</h2>
-<div id="taskList"></div>
-</div>
+    <canvas id="matrix-canvas"></canvas>
 
-<div class="card mb-4">
-<h2 class="font-bold mb-2">الإحصائيات</h2>
-<div>النقاط: <span id="xp">0</span></div>
-<div>سلسلة الأيام: <span id="streak">0</span></div>
-</div>
+    <div class="overlay" id="mainOverlay">
+        <div class="marquee-container" id="marqueeBox">
+            <div class="marquee-content" id="marqueeItems">
+                <div class="marquee-text">تم الإختراق بنجاح ☠️</div>
+                <div class="marquee-text">تم الإختراق بنجاح ☠️</div>
+                <div class="marquee-text">تم الإختراق بنجاح ☠️</div>
+                <div class="marquee-text">تم الإختراق بنجاح ☠️</div>
+            </div>
+        </div>
 
-<div class="card mb-4">
-<button class="btn" id="exportBtn">تصدير البيانات</button>
-<button class="btn bg-gray-700" id="importBtn">استيراد</button>
-<input type="file" id="importFile" hidden>
-</div>
+        <div class="system-logs">
+            [AUTHOR: HAMZA ELKOPA]<br>
+            [SYSTEM: STABLE]<br>
+            [MATRIX_DRIVE: ACTIVE]<br>
+            [SESSION: VERIFIED]
+        </div>
+    </div>
 
-<div class="card">
-<button class="btn bg-red-700" id="resetBtn">إعادة تعيين البيانات</button>
-</div>
+    <script>
+        const marqueeBox = document.getElementById('marqueeBox');
+        const marqueeItems = document.getElementById('marqueeItems');
+        const userInput = document.getElementById('userInput');
+        const toggleBtn = document.getElementById('toggleBtn');
+        const mainOverlay = document.getElementById('mainOverlay');
+        const settingsModal = document.getElementById('settingsModal');
+        const autoCodeScreen = document.getElementById('auto-code-screen');
+        const codeDisplay = document.getElementById('code-display');
 
-<script>
-/* =========================
-   SAFE STORAGE HELPERS
-========================= */
+        let autoCodeInterval;
 
-function safeParse(key, fallback){
-  try{
-    const v = JSON.parse(localStorage.getItem(key))
-    return v ?? fallback
-  }catch{
-    return fallback
-  }
-}
+        function toggleModal() {
+            settingsModal.classList.toggle('active');
+        }
 
-function saveKey(key,val){
-  localStorage.setItem(key,JSON.stringify(val))
-}
+        function updateText() {
+            const val = userInput.value.trim();
+            if (val === "") return;
+            const content = `<div class="marquee-text">${val}</div>`;
+            marqueeItems.innerHTML = content.repeat(8);
+            if (marqueeBox.classList.contains('hidden')) toggleMarquee();
+            toggleModal();
+        }
 
-/* =========================
-   STATE
-========================= */
+        function toggleMarquee() {
+            const isHidden = marqueeBox.classList.toggle('hidden');
+            if (isHidden) {
+                toggleBtn.innerText = "إظهار";
+                toggleBtn.style.background = "#00ff00";
+                toggleBtn.style.color = "#000";
+                mainOverlay.style.background = "rgba(0, 0, 0, 0.1)";
+            } else {
+                toggleBtn.innerText = "إخفاء";
+                toggleBtn.style.background = "#ff0000";
+                toggleBtn.style.color = "white";
+                mainOverlay.style.background = "rgba(0, 0, 0, 0.4)";
+            }
+        }
 
-const state = {
- tasks: safeParse("dl_tasks",[]),
- history: safeParse("dl_history",[]),
- xp: safeParse("dl_xp",0),
- streak: safeParse("dl_streak",0),
- busy:false
-}
+        /* قوالب كود بايثون */
+        const pythonLines = [
+            { text: "import", type: "py-keyword" },
+            { text: " os, sys, socket, threading\n", type: "py-normal" },
+            { text: "# Initializing exploit sequence\n", type: "py-comment" },
+            { text: "def", type: "py-keyword" },
+            { text: " connect_to_target", type: "py-func" },
+            { text: "(ip_address, port):\n", type: "py-normal" },
+            { text: "    try", type: "py-keyword" },
+            { text: ":\n        server =", type: "py-normal" },
+            { text: " socket.socket", type: "py-func" },
+            { text: "(socket.AF_INET, socket.SOCK_STREAM)\n", type: "py-normal" },
+            { text: "        server.", type: "py-normal" },
+            { text: "connect", type: "py-func" },
+            { text: "((ip_address, port))\n", type: "py-normal" },
+            { text: "        ", type: "py-normal" },
+            { text: "print", type: "py-builtin" },
+            { text: "(", type: "py-normal" },
+            { text: "f\"Connected to {ip_address}\"", type: "py-string" },
+            { text: ")\n", type: "py-normal" },
+            { text: "    except", type: "py-keyword" },
+            { text: " Exception ", type: "py-normal" },
+            { text: "as", type: "py-keyword" },
+            { text: " e:\n        return ", type: "py-normal" },
+            { text: "None", type: "py-keyword" },
+            { text: "\n\nif", type: "py-keyword" },
+            { text: " __name__ == ", type: "py-normal" },
+            { text: "\"__main__\"", type: "py-string" },
+            { text: ":\n    payload =", type: "py-normal" },
+            { text: " \"0xAF77B1\"", type: "py-string" },
+            { text: "\n    target_list = [", type: "py-normal" },
+            { text: "102, 105, 201, 80", type: "py-number" },
+            { text: "]\n    ", type: "py-normal" },
+            { text: "for", type: "py-keyword" },
+            { text: " t ", type: "py-normal" },
+            { text: "in", type: "py-keyword" },
+            { text: " target_list:\n        ", type: "py-normal" },
+            { text: "exec_payload", type: "py-func" },
+            { text: "(t, payload)\n", type: "py-normal" }
+        ];
 
-/* =========================
-   SAVE
-========================= */
+        function startAutoCode() {
+            autoCodeScreen.style.display = 'block';
+            toggleModal();
+            codeDisplay.innerHTML = "";
+            let lineIndex = 0;
+            
+            autoCodeInterval = setInterval(() => {
+                const line = pythonLines[lineIndex % pythonLines.length];
+                const span = document.createElement('span');
+                span.className = line.type;
+                span.innerText = line.text;
+                codeDisplay.appendChild(span);
 
-function saveAll(){
- saveKey("dl_tasks",state.tasks)
- saveKey("dl_history",state.history)
- saveKey("dl_xp",state.xp)
- saveKey("dl_streak",state.streak)
-}
+                lineIndex++;
+                autoCodeScreen.scrollTop = autoCodeScreen.scrollHeight;
 
-/* =========================
-   SAFE TEXT NODE (ANTI XSS)
-========================= */
+                if (codeDisplay.innerText.length > 3000) {
+                    codeDisplay.innerHTML = "";
+                }
+            }, 60);
+        }
 
-function textNode(t){
- return document.createTextNode(t)
-}
+        function stopAutoCode() {
+            autoCodeScreen.style.display = 'none';
+            clearInterval(autoCodeInterval);
+        }
 
-/* =========================
-   RENDER
-========================= */
+        /* Matrix Logic */
+        const canvas = document.getElementById('matrix-canvas');
+        const ctx = canvas.getContext('2d');
+        function resize() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+        }
+        window.addEventListener('resize', resize);
+        resize();
 
-function renderTasks(){
- const box=document.getElementById("taskList")
- box.innerHTML=""
+        const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789$#@%&*";
+        const fontSize = 18;
+        const columns = Math.floor(canvas.width / fontSize);
+        const drops = Array(columns).fill(1);
 
- if(state.tasks.length===0){
-   const p=document.createElement("p")
-   p.className="opacity-50"
-   p.appendChild(textNode("ابدأ بإضافة أول مهمة 🚀"))
-   box.appendChild(p)
-   return
- }
+        function draw() {
+            ctx.fillStyle = "rgba(0, 0, 0, 0.08)";
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            ctx.fillStyle = "#0F0"; 
+            ctx.font = fontSize + "px monospace";
+            for (let i = 0; i < drops.length; i++) {
+                const char = chars.charAt(Math.floor(Math.random() * chars.length));
+                ctx.fillText(char, i * fontSize, drops[i] * fontSize);
+                if (drops[i] * fontSize > canvas.height && Math.random() > 0.975) drops[i] = 0;
+                drops[i]++;
+            }
+        }
+        setInterval(draw, 33);
 
- state.tasks.forEach(task=>{
-   const row=document.createElement("div")
-   row.className="flex justify-between items-center mb-2"
-
-   const span=document.createElement("span")
-   span.appendChild(textNode(task.text))
-   if(task.done) span.className="line-through opacity-50"
-
-   const btn=document.createElement("button")
-   btn.className="btn text-sm"
-   btn.textContent= task.done ? "✓" : "إنجاز"
-   btn.disabled=task.done
-   btn.onclick=()=>completeTask(task.id)
-
-   const del=document.createElement("button")
-   del.className="btn bg-red-700 text-sm mr-2"
-   del.textContent="حذف"
-   del.onclick=()=>deleteTask(task.id)
-
-   const right=document.createElement("div")
-   right.appendChild(btn)
-   right.appendChild(del)
-
-   row.appendChild(span)
-   row.appendChild(right)
-   box.appendChild(row)
- })
- updateStats()
-}
-
-/* =========================
-   VALIDATION
-========================= */
-
-function cleanInput(v){
- return v.replace(/[<>]/g,"").trim()
-}
-
-/* =========================
-   ADD TASK
-========================= */
-
-document.getElementById("taskForm").onsubmit=e=>{
- e.preventDefault()
- if(state.busy) return
- state.busy=true
-
- const inp=document.getElementById("taskInput")
- let v=cleanInput(inp.value)
-
- if(v.length<2){ state.busy=false; return }
-
- state.tasks.unshift({
-   id:Date.now(),
-   text:v,
-   done:false,
-   created:Date.now()
- })
-
- inp.value=""
- saveAll()
- renderTasks()
- state.busy=false
-}
-
-/* =========================
-   COMPLETE
-========================= */
-
-function completeTask(id){
- const t=state.tasks.find(x=>x.id===id)
- if(!t||t.done) return
- t.done=true
- t.doneAt=Date.now()
-
- state.history.push(t.doneAt)
- state.xp+=20
- updateStreak()
-
- saveAll()
- renderTasks()
-}
-
-/* =========================
-   DELETE
-========================= */
-
-function deleteTask(id){
- state.tasks=state.tasks.filter(x=>x.id!==id)
- saveAll()
- renderTasks()
-}
-
-/* =========================
-   STREAK
-========================= */
-
-function updateStreak(){
- if(state.history.length<2){
-   state.streak=1
-   return
- }
- const last=new Date(state.history.at(-1)).toDateString()
- const prev=new Date(state.history.at(-2)).toDateString()
-
- if(last!==prev) state.streak++
-}
-
-/* =========================
-   STATS
-========================= */
-
-function updateStats(){
- document.getElementById("xp").textContent=state.xp
- document.getElementById("streak").textContent=state.streak
-}
-
-/* =========================
-   EXPORT
-========================= */
-
-document.getElementById("exportBtn").onclick=()=>{
- const data=JSON.stringify(state)
- const blob=new Blob([data],{type:"application/json"})
- const a=document.createElement("a")
- a.href=URL.createObjectURL(blob)
- a.download="doncod-backup.json"
- a.click()
-}
-
-/* =========================
-   IMPORT
-========================= */
-
-document.getElementById("importBtn").onclick=()=>{
- document.getElementById("importFile").click()
-}
-
-document.getElementById("importFile").onchange=e=>{
- const file=e.target.files[0]
- if(!file) return
- const r=new FileReader()
- r.onload=()=>{
-   try{
-     const d=JSON.parse(r.result)
-     state.tasks=d.tasks||[]
-     state.history=d.history||[]
-     state.xp=d.xp||0
-     state.streak=d.streak||0
-     saveAll()
-     renderTasks()
-   }catch{
-     alert("ملف غير صالح")
-   }
- }
- r.readAsText(file)
-}
-
-/* =========================
-   RESET SAFE
-========================= */
-
-document.getElementById("resetBtn").onclick=()=>{
- if(!confirm("مسح بيانات المنصة فقط؟")) return
- localStorage.removeItem("dl_tasks")
- localStorage.removeItem("dl_history")
- localStorage.removeItem("dl_xp")
- localStorage.removeItem("dl_streak")
- location.reload()
-}
-
-/* =========================
-   INIT
-========================= */
-
-renderTasks()
-</script>
-
+        userInput.addEventListener("keypress", (e) => { if (e.key === "Enter") updateText(); });
+        document.addEventListener('mousedown', (e) => {
+            if (!settingsModal.contains(e.target) && !document.querySelector('.settings-trigger').contains(e.target)) {
+                settingsModal.classList.remove('active');
+            }
+        });
+    </script>
 </body>
 </html>
