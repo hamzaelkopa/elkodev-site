@@ -3,390 +3,344 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>شاشة الاختراق التفاعلية</title>
+    <title>CineMate AI Pro - المنصة السينمائية المتكاملة</title>
+    <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        /* الإعدادات الأساسية */
-        body, html {
-            margin: 0;
-            padding: 0;
-            width: 100%;
-            height: 100%;
-            background-color: black;
-            overflow: hidden;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        @import url('https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;600;700&display=swap');
+        
+        body {
+            font-family: 'Cairo', sans-serif;
+            background-color: #080808;
+            color: #d1d1d1;
         }
 
-        /* خلفية مطر الأكواد الحمراء الكثيفة */
-        #matrix-canvas {
-            position: absolute;
-            top: 0;
-            left: 0;
-            z-index: 1;
-            display: block;
+        .glass-header {
+            background: rgba(180, 0, 0, 0.95);
+            backdrop-filter: blur(12px);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
         }
 
-        /* حاوية المحتوى الرئيسية */
-        .overlay {
-            position: relative;
-            z-index: 2;
-            width: 100%;
-            height: 100%;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            background: rgba(0, 0, 0, 0.6); 
-            transition: background 0.5s ease;
+        #chat-box::-webkit-scrollbar {
+            width: 4px;
+        }
+        #chat-box::-webkit-scrollbar-thumb {
+            background: #b91c1c;
+            border-radius: 10px;
         }
 
-        /* تنسيق الأزرار الصغيرة جداً والشفافة */
-        .btn-red-small {
-            position: fixed;
-            background: transparent !important;
-            color: #ff0000;
-            border: 1px solid #ff0000;
-            width: 20px;
-            height: 20px;
-            border-radius: 50%;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            cursor: pointer;
-            font-weight: bold;
-            font-size: 10px;
-            font-family: Arial, sans-serif;
-            transition: all 0.3s ease;
-            box-shadow: 0 0 5px rgba(255, 0, 0, 0.4);
-            pointer-events: auto;
-            z-index: 3000;
+        .message-anim {
+            animation: slideIn 0.3s ease-out;
         }
 
-        .btn-red-small:hover {
-            background: rgba(255, 0, 0, 0.4) !important;
-            color: white;
-            transform: scale(1.1);
+        @keyframes slideIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
         }
 
-        .settings-trigger {
-            top: 15px;
-            left: 15px;
-        }
-
-        .exit-code-btn {
-            top: 15px;
-            right: 15px;
-            display: none;
-        }
-
-        /* لوحة التحكم */
-        .controls-modal {
-            position: fixed;
-            top: 45px;
-            left: 15px;
-            z-index: 2050;
-            background: rgba(10, 10, 10, 0.95);
-            padding: 12px;
+        .poster-img {
+            max-width: 200px;
             border-radius: 8px;
-            border: 1px solid #ff0000;
-            display: flex;
-            flex-direction: column;
-            gap: 8px;
-            box-shadow: 0 0 25px rgba(255, 0, 0, 0.2);
-            transform: scale(0);
-            transform-origin: top left;
-            transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-            opacity: 0;
-            pointer-events: none;
+            box-shadow: 0 8px 20px rgba(0,0,0,0.6);
+            margin: 8px 0;
+            border: 1px solid #b91c1c;
         }
 
-        .controls-modal.active {
-            transform: scale(1);
-            opacity: 1;
-            pointer-events: all;
+        .glow-button {
+            transition: all 0.2s ease;
+        }
+        .glow-button:hover {
+            filter: brightness(1.2);
+            transform: translateY(-1px);
         }
 
-        .modal-header {
-            color: #ff0000;
-            font-size: 0.75rem;
-            font-weight: bold;
-            border-bottom: 1px solid rgba(255, 0, 0, 0.2);
-            padding-bottom: 5px;
+        .ai-bubble {
+            background: #1a1a1a;
+            border: 1px solid rgba(255,255,255,0.05);
         }
 
-        input[type="text"] {
-            background: #000;
-            border: 1px solid #ff0000;
-            color: #ff0000;
-            padding: 6px;
-            border-radius: 4px;
-            outline: none;
-            font-size: 0.8rem;
-            width: 160px;
+        .user-bubble {
+            background: #b91c1c;
         }
 
-        .button-group {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 5px;
-        }
-
-        .controls-modal button {
-            background: transparent;
-            color: #ff0000;
-            border: 1px solid #ff0000;
-            padding: 5px;
-            border-radius: 3px;
+        .suggestion-chip {
+            transition: all 0.2s;
             cursor: pointer;
-            font-size: 0.65rem;
-            font-weight: bold;
-        }
-
-        /* وضع الكود التلقائي */
-        #auto-code-screen {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(5, 5, 5, 0.95);
-            z-index: 2400;
-            display: none;
-            padding: 60px 30px 30px 30px;
-            box-sizing: border-box;
-            overflow-y: auto;
-            font-family: 'Fira Code', 'Consolas', 'Courier New', monospace;
-            border: 2px solid #1a1a1a;
-            direction: ltr !important; 
-        }
-
-        #code-display {
-            white-space: pre-wrap;
-            word-break: break-all;
-            font-size: 13px;
-            line-height: 1.5;
-            text-align: left; 
-            color: #ff4444;
-        }
-
-        /* ألوان بايثون */
-        .py-keyword { color: #ff2222; font-weight: bold; }
-        .py-func { color: #ff6666; }
-        .py-string { color: #ff8888; }
-        .py-comment { color: #550000; font-style: italic; }
-        .py-normal { color: #ffaaaa; }
-        .py-operator { color: #ff0000; }
-
-        /* الشريط المتحرك */
-        .marquee-container {
-            width: 100%;
-            background: rgba(255, 0, 0, 0.2);
-            border-top: 2px solid #ff0000;
-            border-bottom: 2px solid #ff0000;
-            padding: 15px 0;
-            overflow: hidden;
-            display: flex;
-            box-shadow: 0 0 15px rgba(255, 0, 0, 0.3);
-        }
-
-        .marquee-container.hidden { display: none; }
-
-        .marquee-content {
-            display: flex;
             white-space: nowrap;
-            animation: infinite-scroll 8s linear infinite;
         }
-
-        .marquee-text {
-            font-size: 4rem;
-            font-weight: 900;
-            color: #ff0000;
-            text-shadow: 0 0 10px rgba(255, 0, 0, 0.8);
-            padding-left: 40px; 
-            padding-right: 40px;
-        }
-
-        @keyframes infinite-scroll {
-            from { transform: translateX(0); }
-            to { transform: translateX(50%); }
-        }
-
-        /* تنسيق سجلات النظام (Logs) بالإنجليزية */
-        .system-logs {
-            position: fixed;
-            bottom: 12px;
-            right: 12px;
-            color: #ff0000;
-            font-family: 'Courier New', monospace;
-            font-size: 10px;
-            background: rgba(0,0,0,0.7);
-            padding: 8px;
-            border-right: 2px solid #ff0000;
-            pointer-events: none;
-            direction: ltr; /* التغيير للإنجليزية */
-            text-align: left;
+        .suggestion-chip:hover {
+            background: #b91c1c;
+            color: white;
+            border-color: #b91c1c;
         }
     </style>
 </head>
-<body>
+<body class="h-screen flex items-center justify-center p-0 sm:p-6">
 
-    <div id="settingsBtn" class="btn-red-small settings-trigger" onclick="toggleModal()" title="Settings">×</div>
-    <div id="exitPythonBtn" class="btn-red-small exit-code-btn" onclick="stopAutoCode()" title="Close">×</div>
-
-    <div class="controls-modal" id="settingsModal">
-        <div class="modal-header">CONTROL PANEL</div>
-        <input type="text" id="userInput" placeholder="Enter message..." maxlength="50">
-        <div class="button-group">
-            <button onclick="updateText()">UPDATE</button>
-            <button onclick="toggleMarquee()">HIDE</button>
-            <button style="grid-column: span 2;" onclick="startAutoCode()">PYTHON MODE 🚀</button>
-        </div>
-    </div>
-
-    <div id="auto-code-screen">
-        <div id="code-display"></div>
-    </div>
-
-    <canvas id="matrix-canvas"></canvas>
-
-    <div class="overlay" id="mainOverlay">
-        <div class="marquee-container" id="marqueeBox">
-            <div class="marquee-content" id="marqueeItems">
-                <div class="marquee-text">HACKED SUCCESSFULLY ☠️</div>
-                <div class="marquee-text">HACKED SUCCESSFULLY ☠️</div>
-                <div class="marquee-text">HACKED SUCCESSFULLY ☠️</div>
-                <div class="marquee-text">HACKED SUCCESSFULLY ☠️</div>
-                <div class="marquee-text">HACKED SUCCESSFULLY ☠️</div>
-                <div class="marquee-text">HACKED SUCCESSFULLY ☠️</div>
+    <div class="app-container w-full max-w-3xl h-full sm:h-[85vh] bg-[#0f0f0f] rounded-none sm:rounded-2xl flex flex-col overflow-hidden shadow-2xl border border-white/5">
+        
+        <!-- Header -->
+        <header class="glass-header px-5 py-3 flex justify-between items-center z-10">
+            <div class="flex items-center gap-3">
+                <div class="bg-white p-1.5 rounded-md text-red-700 shadow-md">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 4v16M17 4v16M3 8h4m10 0h4M3 12h18M3 16h4m10 0h4M4 20h16a1 1 0 001-1V5a1 1 0 00-1-1H4a1 1 0 00-1 1v14a1 1 0 001 1z" />
+                    </svg>
+                </div>
+                <div>
+                    <h1 class="font-bold text-lg text-white leading-tight">CineMate <span class="text-[10px] tracking-widest bg-black/20 px-1.5 py-0.5 rounded border border-white/10 ml-1">PRO</span></h1>
+                    <p class="text-[10px] text-white/70 uppercase tracking-tighter">AI Film Critic Platform</p>
+                </div>
             </div>
+            <button onclick="clearChat()" class="text-white/50 hover:text-white text-[11px] font-medium transition-colors">إعادة ضبط الجلسة</button>
+        </header>
+
+        <!-- Suggestions Bar -->
+        <div class="bg-black/40 border-b border-white/5 p-2 overflow-x-auto flex gap-2 no-scrollbar">
+            <div onclick="quickAsk('اقترح لي أفضل 5 أفلام دراما في العقد الأخير')" class="suggestion-chip px-3 py-1 rounded-full border border-white/10 text-[10px] text-gray-400">🎭 دراما</div>
+            <div onclick="quickAsk('أفلام خيال علمي بنهايات غير متوقعة')" class="suggestion-chip px-3 py-1 rounded-full border border-white/10 text-[10px] text-gray-400">🚀 خيال علمي</div>
+            <div onclick="quickAsk('أفلام غموض وجريمة ستجعلني أفكر طويلاً')" class="suggestion-chip px-3 py-1 rounded-full border border-white/10 text-[10px] text-gray-400">🔍 غموض</div>
+            <div onclick="quickAsk('روائع السينما الكلاسيكية التي يجب مشاهدتها')" class="suggestion-chip px-3 py-1 rounded-full border border-white/10 text-[10px] text-gray-400">🎞️ كلاسيكيات</div>
+            <div onclick="quickAsk('اقترح لي فيلماً عشوائياً ممتعاً لسهرة الليلة')" class="suggestion-chip px-3 py-1 rounded-full border border-white/10 text-[10px] text-gray-400">🎲 عشوائي</div>
         </div>
 
-        <!-- السجلات بالإنجليزية -->
-        <div class="system-logs">
-            [AUTHOR: HAMZA ELKOPA]<br>
-            [STATUS: ACTIVE_BREACH]<br>
-            [BACKGROUND: RED_MATRIX_RAIN]
-        </div>
+        <!-- Chat Area -->
+        <main id="chat-box" class="flex-1 overflow-y-auto p-5 space-y-5 bg-[radial-gradient(circle_at_center,_#121212_0%,_#080808_100%)]">
+            <!-- AI Welcome Message -->
+            <div class="message-anim flex flex-col items-start max-w-[85%]">
+                <div class="ai-bubble text-white/90 px-4 py-3 rounded-xl rounded-tr-none shadow-sm text-sm border-l-2 border-red-600">
+                    مرحباً بك. أنا CineMate AI. كيف يمكنني إثراء تجربتك السينمائية اليوم؟ 🎞️
+                    <div class="mt-3 grid grid-cols-2 gap-2">
+                        <div class="text-[10px] bg-white/5 p-2 rounded border border-white/5">● توصيات مخصصة</div>
+                        <div class="text-[10px] bg-white/5 p-2 rounded border border-white/5">● تحليل تقني ومعمّق</div>
+                    </div>
+                </div>
+                <span class="text-[9px] text-gray-600 mt-1 mr-1 uppercase tracking-widest">System Engine • Active</span>
+            </div>
+        </main>
+
+        <!-- Input Area -->
+        <footer class="px-5 py-4 bg-[#0a0a0a] border-t border-white/5">
+            <div class="flex items-center gap-3 bg-[#161616] p-1.5 pl-2 rounded-xl border border-white/5 focus-within:border-red-800/50 transition-all duration-300">
+                <button onclick="generatePosterPrompt()" title="توليد بوستر" class="p-2 text-gray-500 hover:text-red-600 transition-colors">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2-2v12a2 2 0 002 2z" />
+                    </svg>
+                </button>
+                <input type="text" id="user-input" 
+                       class="flex-1 bg-transparent border-none outline-none text-white text-xs px-1" 
+                       placeholder="اطلب توصية لفيلم أو ابحث عن معلومة..."
+                       onkeypress="if(event.key === 'Enter') sendMessage()">
+                <button onclick="sendMessage()" class="glow-button bg-red-700 text-white p-2 rounded-lg shadow-lg">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 transform rotate-180" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
+                    </svg>
+                </button>
+            </div>
+            <p class="text-[9px] text-center text-gray-600 mt-2 italic">يعمل بواسطة Gemini 2.5 Flash & Imagen AI</p>
+        </footer>
     </div>
 
     <script>
-        const marqueeBox = document.getElementById('marqueeBox');
-        const marqueeItems = document.getElementById('marqueeItems');
-        const userInput = document.getElementById('userInput');
-        const settingsModal = document.getElementById('settingsModal');
-        const autoCodeScreen = document.getElementById('auto-code-screen');
-        const codeDisplay = document.getElementById('code-display');
-        const exitPythonBtn = document.getElementById('exitPythonBtn');
-        const settingsBtn = document.getElementById('settingsBtn');
+        const apiKey = ""; 
+        let chatHistory = [];
 
-        let autoCodeInterval;
-
-        function toggleModal() {
-            settingsModal.classList.toggle('active');
-        }
-
-        function updateText() {
-            const val = userInput.value.trim();
-            if (val === "") return;
-            const content = `<div class="marquee-text">${val}</div>`;
-            marqueeItems.innerHTML = content.repeat(12);
-            toggleModal();
-        }
-
-        function toggleMarquee() {
-            marqueeBox.classList.toggle('hidden');
-        }
-
-        const pythonLines = [
-            { text: "import ", type: "py-keyword" }, { text: "socket, sys, time, random, hashlib, threading, binascii\n", type: "py-normal" },
-            { text: "from ", type: "py-keyword" }, { text: "datetime ", type: "py-normal" }, { text: "import ", type: "py-keyword" }, { text: "datetime\n", type: "py-normal" },
-            { text: "class ", type: "py-keyword" }, { text: "ExploitEngine", type: "py-func" }, { text: ":\n", type: "py-normal" },
-            { text: "    def ", type: "py-keyword" }, { text: "__init__", type: "py-func" }, { text: "(self, target, port):\n", type: "py-normal" },
-            { text: "        self.target = target; self.port = port; self.payload = ", type: "py-normal" }, { text: "b'\\x90' * 512 + b'\\xcc' * 64\n", type: "py-string" },
-            { text: "    def ", type: "py-keyword" }, { text: "inject_shellcode", type: "py-func" }, { text: "(self, buffer_offset):\n", type: "py-normal" },
-            { text: "        try:\n            sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)\n", type: "py-normal" },
-            { text: "            sock.connect((self.target, self.port))\n", type: "py-normal" },
-            { text: "            print(", type: "py-normal" }, { text: "f\"[*] Overflowing buffer at offset: {buffer_offset}\"", type: "py-string" }, { text: ")\n", type: "py-normal" },
-            { text: "            sock.send(self.payload + ", type: "py-normal" }, { text: "hashlib.sha256(self.payload).digest()", type: "py-func" }, { text: ")\n", type: "py-normal" },
-            { text: "            return sock.recv(1024)\n", type: "py-normal" },
-            { text: "        except ", type: "py-keyword" }, { text: "Exception ", type: "py-normal" }, { text: "as ", type: "py-keyword" }, { text: "e: return e\n", type: "py-normal" },
-            { text: "\n# Starting automated penetration sequence...\n", type: "py-comment" },
-            { text: "while ", type: "py-keyword" }, { text: "True", type: "py-normal" }, { text: ":\n", type: "py-normal" },
-            { text: "    engine = ExploitEngine(", type: "py-normal" }, { text: "\"192.168.1.\" + str(random.randint(1, 254))", type: "py-string" }, { text: ", 443)\n", type: "py-normal" },
-            { text: "    result = engine.inject_shellcode(", type: "py-normal" }, { text: "hex(random.getrandbits(32))", type: "py-func" }, { text: ")\n", type: "py-normal" },
-            { text: "    print(", type: "py-normal" }, { text: "f\"[!] Payload status: {binascii.hexlify(result[:16]) if isinstance(result, bytes) else 'FAILED'}\"", type: "py-string" }, { text: ")\n", type: "py-normal" },
-            { text: "    time.sleep(0.01)\n", type: "py-normal" }
-        ];
-
-        function startAutoCode() {
-            autoCodeScreen.style.display = 'block';
-            exitPythonBtn.style.display = 'flex'; 
-            settingsBtn.style.display = 'none'; 
-            settingsModal.classList.remove('active');
-            codeDisplay.innerHTML = "";
-            let lineIndex = 0;
-            
-            autoCodeInterval = setInterval(() => {
-                const line = pythonLines[lineIndex % pythonLines.length];
-                const span = document.createElement('span');
-                span.className = line.type;
-                span.innerText = line.text;
-                codeDisplay.appendChild(span);
-                lineIndex++;
-                
-                autoCodeScreen.scrollTop = autoCodeScreen.scrollHeight;
-
-                if (codeDisplay.innerText.length > 15000) {
-                    codeDisplay.innerHTML = "";
+        async function fetchWithRetry(url, options, retries = 5, backoff = 1000) {
+            for (let i = 0; i < retries; i++) {
+                try {
+                    const response = await fetch(url, options);
+                    if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+                    return await response.json();
+                } catch (err) {
+                    if (i === retries - 1) throw err;
+                    await new Promise(r => setTimeout(r, backoff * Math.pow(2, i)));
                 }
-            }, 70);
-        }
-
-        function stopAutoCode() {
-            autoCodeScreen.style.display = 'none';
-            exitPythonBtn.style.display = 'none'; 
-            settingsBtn.style.display = 'flex'; 
-            clearInterval(autoCodeInterval);
-        }
-
-        const canvas = document.getElementById('matrix-canvas');
-        const ctx = canvas.getContext('2d');
-        
-        function resize() {
-            canvas.width = window.innerWidth;
-            canvas.height = window.innerHeight;
-        }
-        window.addEventListener('resize', resize);
-        resize();
-
-        const matrixChars = "01010101ABCDEF☠️☣️☢️";
-        const fontSize = 16;
-        const columns = Math.floor(canvas.width / fontSize);
-        const drops = Array(columns).fill(1);
-
-        function drawMatrix() {
-            ctx.fillStyle = "rgba(0, 0, 0, 0.05)";
-            ctx.fillRect(0, 0, canvas.width, canvas.height);
-            
-            ctx.font = fontSize + "px monospace";
-            
-            for (let i = 0; i < drops.length; i++) {
-                const char = matrixChars.charAt(Math.floor(Math.random() * matrixChars.length));
-                
-                const redIntensity = Math.floor(Math.random() * 155) + 100;
-                ctx.fillStyle = `rgb(${redIntensity}, 0, 0)`;
-                
-                ctx.fillText(char, i * fontSize, drops[i] * fontSize);
-                
-                if (drops[i] * fontSize > canvas.height && Math.random() > 0.975) {
-                    drops[i] = 0;
-                }
-                drops[i]++;
             }
         }
-        
-        setInterval(drawMatrix, 33);
 
-        userInput.addEventListener("keypress", (e) => { if (e.key === "Enter") updateText(); });
+        function appendMessage(role, text, isImage = false) {
+            const chatBox = document.getElementById('chat-box');
+            const messageWrapper = document.createElement('div');
+            messageWrapper.className = `message-anim flex flex-col ${role === 'user' ? 'items-end' : 'items-start'} max-w-[85%] ${role === 'user' ? 'self-end' : 'self-start'}`;
+            
+            const time = new Date().toLocaleTimeString('ar-EG', { hour: '2-digit', minute: '2-digit' });
+            
+            let content = '';
+            if (isImage) {
+                content = `<img src="${text}" class="poster-img" alt="Movie Poster">`;
+            } else {
+                content = `<div class="${role === 'user' ? 'user-bubble text-white' : 'ai-bubble text-white/90'} px-4 py-2.5 rounded-xl ${role === 'user' ? 'rounded-tl-none' : 'rounded-tr-none'} shadow-sm text-sm whitespace-pre-wrap leading-relaxed">${text}</div>`;
+            }
+
+            messageWrapper.innerHTML = `
+                ${content}
+                <div class="flex items-center gap-2 mt-1 px-1">
+                    <span class="text-[9px] text-gray-600 uppercase tracking-tighter">${role === 'user' ? 'User' : 'CineMate AI'} • ${time}</span>
+                    ${role !== 'user' && !isImage ? `<button onclick="speakText(this)" class="text-[9px] text-red-500/80 hover:text-red-400 font-bold transition-colors uppercase tracking-widest">Listen 🔊</button>` : ''}
+                </div>
+            `;
+
+            chatBox.appendChild(messageWrapper);
+            chatBox.scrollTop = chatBox.scrollHeight;
+        }
+
+        function quickAsk(text) {
+            document.getElementById('user-input').value = text;
+            sendMessage();
+        }
+
+        async function sendMessage() {
+            const inputField = document.getElementById('user-input');
+            const query = inputField.value.trim();
+            if (!query) return;
+
+            inputField.value = '';
+            appendMessage('user', query);
+
+            const loadingId = 'loading-' + Date.now();
+            const chatBox = document.getElementById('chat-box');
+            const loadingDiv = document.createElement('div');
+            loadingDiv.id = loadingId;
+            loadingDiv.className = 'message-anim flex items-start';
+            loadingDiv.innerHTML = `<div class="ai-bubble px-3 py-2 rounded-lg text-gray-400 text-[10px] animate-pulse italic">Processing Cinematic Data...</div>`;
+            chatBox.appendChild(loadingDiv);
+            chatBox.scrollTop = chatBox.scrollHeight;
+
+            try {
+                if (query.includes("بوستر") || query.includes("صورة") || query.includes("صمم")) {
+                    await generateImage(query, loadingId);
+                } else {
+                    await generateText(query, loadingId);
+                }
+            } catch (error) {
+                document.getElementById(loadingId).innerHTML = `<div class="bg-red-900/20 text-red-400 px-3 py-2 rounded-lg text-[10px]">Technical fault detected. Check connectivity.</div>`;
+            }
+        }
+
+        async function generateText(query, loadingId) {
+            const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${apiKey}`;
+            
+            const payload = {
+                contents: [...chatHistory, { parts: [{ text: query }] }],
+                systemInstruction: {
+                    parts: [{ text: "You are CineMate AI Pro, a high-end cinematic intellectual. Respond in professional Arabic. Be concise, analytical, and sophisticated. When suggesting movies, give a brief reason for each recommendation. Focus on technical aspects like cinematography, direction, and script quality." }]
+                },
+                tools: [{ "google_search": {} }]
+            };
+
+            const data = await fetchWithRetry(url, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+
+            const aiText = data.candidates?.[0]?.content?.parts?.[0]?.text || "No data returned.";
+            
+            chatHistory.push({ role: "user", parts: [{ text: query }] });
+            chatHistory.push({ role: "model", parts: [{ text: aiText }] });
+            if (chatHistory.length > 8) chatHistory.shift();
+
+            document.getElementById(loadingId).remove();
+            appendMessage('ai', aiText);
+        }
+
+        async function generateImage(query, loadingId) {
+            const url = `https://generativelanguage.googleapis.com/v1beta/models/imagen-4.0-generate-001:predict?key=${apiKey}`;
+            
+            const promptGenUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${apiKey}`;
+            const promptData = await fetch(promptGenUrl, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    contents: [{ parts: [{ text: `High-end professional movie poster prompt for: ${query}. Focus on 8k resolution, cinematic lighting, dramatic composition, award-winning style.` }] }]
+                })
+            }).then(r => r.json());
+
+            const englishPrompt = promptData.candidates?.[0]?.content?.parts?.[0]?.text || query;
+
+            const response = await fetchWithRetry(url, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    instances: { prompt: englishPrompt },
+                    parameters: { sampleCount: 1 }
+                })
+            });
+
+            const imageUrl = `data:image/png;base64,${response.predictions[0].bytesBase64Encoded}`;
+            
+            document.getElementById(loadingId).remove();
+            appendMessage('ai', "تم إعداد المسودة البصرية المحددة:");
+            appendMessage('ai', imageUrl, true);
+        }
+
+        async function speakText(btn) {
+            const text = btn.parentElement.previousElementSibling.textContent;
+            const originalText = btn.textContent;
+            btn.textContent = "SYNTHESIZING...";
+            
+            try {
+                const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-tts:generateContent?key=${apiKey}`;
+                const response = await fetch(url, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        contents: [{ parts: [{ text: "بصوت هادئ ونقدي: " + text }] }],
+                        generationConfig: { 
+                            responseModalities: ["AUDIO"],
+                            speechConfig: { voiceConfig: { prebuiltVoiceConfig: { voiceName: "Puck" } } } 
+                        },
+                        model: "gemini-2.5-flash-preview-tts"
+                    })
+                });
+
+                const data = await response.json();
+                const pcmData = data.candidates[0].content.parts[0].inlineData.data;
+                const wavUrl = pcmToWavUrl(pcmData, 24000);
+                const audio = new Audio(wavUrl);
+                audio.play();
+                btn.textContent = "STOP ⏹";
+                audio.onended = () => btn.textContent = originalText;
+            } catch (e) {
+                btn.textContent = "ERROR";
+            }
+        }
+
+        function pcmToWavUrl(base64Pcm, sampleRate) {
+            const pcmBuffer = Uint8Array.from(atob(base64Pcm), c => c.charCodeAt(0)).buffer;
+            const wavHeader = new ArrayBuffer(44);
+            const view = new DataView(wavHeader);
+            const writeString = (o, s) => { for (let i = 0; i < s.length; i++) view.setUint8(o + i, s.charCodeAt(i)); };
+            writeString(0, 'RIFF');
+            view.setUint32(4, 32 + pcmBuffer.byteLength, true);
+            writeString(8, 'WAVE');
+            writeString(12, 'fmt ');
+            view.setUint32(16, 16, true);
+            view.setUint16(20, 1, true);
+            view.setUint16(22, 1, true);
+            view.setUint32(24, sampleRate, true);
+            view.setUint32(28, sampleRate * 2, true);
+            view.setUint16(32, 2, true);
+            view.setUint16(34, 16, true);
+            writeString(36, 'data');
+            view.setUint32(40, pcmBuffer.byteLength, true);
+            return URL.createObjectURL(new Blob([wavHeader, pcmBuffer], { type: 'audio/wav' }));
+        }
+
+        function clearChat() {
+            if(confirm("Clear current sequence?")) {
+                document.getElementById('chat-box').innerHTML = `
+                    <div class="message-anim flex flex-col items-start max-w-[85%]">
+                        <div class="ai-bubble text-white/90 px-4 py-3 rounded-xl shadow-sm text-sm">Sequence Reset. Awaiting Input.</div>
+                    </div>
+                `;
+                chatHistory = [];
+            }
+        }
+
+        function generatePosterPrompt() {
+            document.getElementById('user-input').value = "صمم بوستر لفيلم Neo-Noir في مدينة مستقبلية";
+            sendMessage();
+        }
     </script>
 </body>
 </html>
