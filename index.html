@@ -39,46 +39,61 @@
             transition: background 0.5s ease;
         }
 
-        /* زر الإعدادات العائم */
-        .settings-trigger {
-            position: absolute;
-            top: 20px;
-            left: 20px;
-            z-index: 100;
-            background: rgba(10, 10, 10, 0.8);
-            border: 1px solid #00ff00;
-            color: #00ff00;
-            width: 45px;
-            height: 45px;
+        /* تنسيق الأزرار الصغيرة جداً والشفافة */
+        .btn-red-small {
+            position: fixed;
+            background: transparent !important;
+            color: #ff0000;
+            border: 1px solid #ff0000;
+            width: 20px;
+            height: 20px;
             border-radius: 50%;
             display: flex;
             justify-content: center;
             align-items: center;
             cursor: pointer;
-            box-shadow: 0 0 15px rgba(0, 255, 0, 0.3);
+            font-weight: bold;
+            font-size: 10px;
+            font-family: Arial, sans-serif;
             transition: all 0.3s ease;
+            box-shadow: 0 0 3px rgba(255, 0, 0, 0.3);
+            pointer-events: auto;
+            z-index: 3000;
         }
 
-        .settings-trigger:hover {
-            background: #00ff00;
-            color: #000;
-            box-shadow: 0 0 25px #00ff00;
+        .btn-red-small:hover {
+            background: rgba(255, 0, 0, 0.2) !important;
+            color: white;
+            transform: scale(1.1);
+        }
+
+        /* زر الإعدادات العلوية */
+        .settings-trigger {
+            top: 15px;
+            left: 15px;
+        }
+
+        /* زر الخروج من شاشة الكود */
+        .exit-code-btn {
+            top: 15px;
+            right: 15px;
+            display: none;
         }
 
         /* لوحة التحكم */
         .controls-modal {
-            position: absolute;
-            top: 80px;
-            left: 20px;
-            z-index: 99;
+            position: fixed;
+            top: 45px;
+            left: 15px;
+            z-index: 2050;
             background: rgba(10, 10, 10, 0.95);
-            padding: 20px;
-            border-radius: 12px;
-            border: 1px solid #00ff00;
+            padding: 12px;
+            border-radius: 8px;
+            border: 1px solid #ff0000;
             display: flex;
             flex-direction: column;
-            gap: 12px;
-            box-shadow: 0 0 30px rgba(0, 0, 0, 1);
+            gap: 8px;
+            box-shadow: 0 0 25px rgba(0, 0, 0, 1);
             transform: scale(0);
             transform-origin: top left;
             transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
@@ -93,127 +108,103 @@
         }
 
         .modal-header {
-            color: #00ff00;
-            font-size: 0.9rem;
+            color: #ff0000;
+            font-size: 0.75rem;
             font-weight: bold;
-            border-bottom: 1px solid rgba(0, 255, 0, 0.2);
-            padding-bottom: 10px;
-            margin-bottom: 5px;
+            border-bottom: 1px solid rgba(255, 0, 0, 0.2);
+            padding-bottom: 5px;
         }
 
         input[type="text"] {
             background: #000;
-            border: 1px solid #00ff00;
-            color: #00ff00;
-            padding: 10px 15px;
-            border-radius: 6px;
+            border: 1px solid #ff0000;
+            color: #ff0000;
+            padding: 6px;
+            border-radius: 4px;
             outline: none;
-            font-size: 0.95rem;
-            width: 220px;
+            font-size: 0.8rem;
+            width: 160px;
         }
 
         .button-group {
             display: grid;
             grid-template-columns: 1fr 1fr;
-            gap: 8px;
+            gap: 5px;
         }
 
-        button {
-            background: #00ff00;
-            color: #000;
-            border: none;
-            padding: 10px;
-            border-radius: 6px;
+        .controls-modal button {
+            background: transparent;
+            color: #ff0000;
+            border: 1px solid #ff0000;
+            padding: 5px;
+            border-radius: 3px;
             cursor: pointer;
+            font-size: 0.65rem;
             font-weight: bold;
-            font-size: 0.8rem;
         }
 
-        button.toggle-btn {
-            background: #ff0000;
-            color: white;
-        }
-
-        button.auto-code-btn {
-            background: #0088ff;
-            color: white;
-            grid-column: span 2;
-        }
-
-        /* وضع الكود التلقائي المحاكي لـ Python */
+        /* وضع الكود التلقائي */
         #auto-code-screen {
             position: fixed;
             top: 0;
             left: 0;
             width: 100%;
             height: 100%;
-            background: #0d0d0d;
-            z-index: 1000;
+            background: #050505;
+            z-index: 2400;
             display: none;
-            padding: 30px;
+            padding: 60px 30px 30px 30px;
             box-sizing: border-box;
-            overflow: hidden;
+            overflow-y: auto;
             font-family: 'Fira Code', 'Consolas', 'Courier New', monospace;
-            cursor: pointer;
-            border: 5px solid #1a1a1a;
-            /* إجبار الاتجاه من اليسار لليمين للأكواد */
+            border: 2px solid #1a1a1a;
             direction: ltr !important; 
         }
 
         #code-display {
             white-space: pre-wrap;
             word-break: break-all;
-            font-size: 16px;
-            line-height: 1.6;
-            text-align: left; /* المحاذاة لليسار */
+            font-size: 13px;
+            line-height: 1.5;
+            text-align: left; 
             color: #c9d1d9;
         }
 
-        /* ألوان بايثون (Pythonic Colors) */
-        .py-keyword { color: #ff7b72; font-weight: bold; }
+        /* ألوان بايثون */
+        .py-keyword { color: #ff7b72; }
         .py-func { color: #d2a8ff; }
         .py-string { color: #a5d6ff; }
-        .py-comment { color: #8b949e; font-style: italic; }
-        .py-number { color: #79c0ff; }
-        .py-operator { color: #ff7b72; }
-        .py-builtin { color: #ffa657; }
+        .py-comment { color: #8b949e; }
         .py-normal { color: #c9d1d9; }
 
-        /* أنماط الشريط المتحرك */
+        /* الشريط المتحرك - تحسين الانسيابية والسرعة */
         .marquee-container {
             width: 100%;
-            background: rgba(255, 0, 0, 0.25);
-            border-top: 4px solid #ff0000;
-            border-bottom: 4px solid #ff0000;
-            padding: 25px 0;
+            background: rgba(255, 0, 0, 0.1);
+            border-top: 1px solid #ff0000;
+            border-bottom: 1px solid #ff0000;
+            padding: 10px 0;
             overflow: hidden;
             display: flex;
-            box-shadow: 0 0 40px rgba(255, 0, 0, 0.6);
-            transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
-            opacity: 1;
-            transform: scaleY(1);
         }
 
-        .marquee-container.hidden {
-            opacity: 0;
-            transform: scaleY(0);
-            padding: 0;
-            border-width: 0;
-            margin: 0;
-        }
+        .marquee-container.hidden { display: none; }
 
         .marquee-content {
             display: flex;
             white-space: nowrap;
-            animation: infinite-scroll 10s linear infinite;
+            /* زيادة السرعة من 12 ثانية إلى 8 ثواني ليكون أسرع بقليل */
+            animation: infinite-scroll 8s linear infinite;
         }
 
         .marquee-text {
-            font-size: 5.5rem;
+            font-size: 3.5rem;
             font-weight: 900;
             color: #ff0000;
-            text-shadow: 0 0 20px #ff0000, 0 0 40px #7a0000;
-            padding-left: 80px;
+            text-shadow: 0 0 8px #ff0000;
+            /* تقليل المسافة لتظهر الكلمات متتالية بشكل أفضل */
+            padding-left: 30px; 
+            padding-right: 30px;
         }
 
         @keyframes infinite-scroll {
@@ -222,44 +213,42 @@
         }
 
         .system-logs {
-            position: absolute;
-            bottom: 20px;
-            right: 20px;
-            color: #00ff00;
+            position: fixed;
+            bottom: 12px;
+            right: 12px;
+            color: #ff0000;
             font-family: 'Courier New', monospace;
-            font-size: 13px;
-            text-align: right;
-            background: rgba(0,0,0,0.7);
-            padding: 10px;
-            border-right: 3px solid #00ff00;
+            font-size: 9px;
+            background: rgba(0,0,0,0.5);
+            padding: 6px;
+            border-right: 1px solid #ff0000;
             pointer-events: none;
-            text-shadow: 0 0 5px #00ff00;
-            line-height: 1.5;
-            direction: rtl; /* العودة لليمين للنصوص العربية */
+            direction: rtl; 
         }
     </style>
 </head>
 <body>
 
-    <!-- الشاشة التلقائية للكود -->
-    <div id="auto-code-screen" onclick="stopAutoCode()">
-        <div id="code-display"></div>
-    </div>
-
     <!-- زر الإعدادات -->
-    <div class="settings-trigger" onclick="toggleModal()" title="إعدادات">
-        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
-    </div>
+    <div id="settingsBtn" class="btn-red-small settings-trigger" onclick="toggleModal()" title="إعدادات">×</div>
+
+    <!-- زر الخروج من وضع بايثون -->
+    <div id="exitPythonBtn" class="btn-red-small exit-code-btn" onclick="stopAutoCode()" title="إغلاق">×</div>
 
     <!-- نافذة الإعدادات -->
     <div class="controls-modal" id="settingsModal">
-        <div class="modal-header">لوحة التحكم التفاعلية</div>
-        <input type="text" id="userInput" placeholder="اكتب رسالتك هنا..." maxlength="50">
+        <div class="modal-header">لوحة التحكم</div>
+        <input type="text" id="userInput" placeholder="اكتب رسالتك..." maxlength="50">
         <div class="button-group">
             <button onclick="updateText()">تحديث</button>
-            <button class="toggle-btn" id="toggleBtn" onclick="toggleMarquee()">إخفاء</button>
-            <button class="auto-code-btn" onclick="startAutoCode()">تفعيل وضع بايثون التلقائي 🚀</button>
+            <button onclick="toggleMarquee()">إخفاء</button>
+            <button style="grid-column: span 2;" onclick="startAutoCode()">وضع بايثون 🚀</button>
         </div>
+    </div>
+
+    <!-- الشاشة التلقائية للكود -->
+    <div id="auto-code-screen">
+        <div id="code-display"></div>
     </div>
 
     <canvas id="matrix-canvas"></canvas>
@@ -267,6 +256,9 @@
     <div class="overlay" id="mainOverlay">
         <div class="marquee-container" id="marqueeBox">
             <div class="marquee-content" id="marqueeItems">
+                <!-- زيادة عدد العناصر لضمان استمرارية الحركة دون انقطاع -->
+                <div class="marquee-text">تم الإختراق بنجاح ☠️</div>
+                <div class="marquee-text">تم الإختراق بنجاح ☠️</div>
                 <div class="marquee-text">تم الإختراق بنجاح ☠️</div>
                 <div class="marquee-text">تم الإختراق بنجاح ☠️</div>
                 <div class="marquee-text">تم الإختراق بنجاح ☠️</div>
@@ -276,9 +268,8 @@
 
         <div class="system-logs">
             [AUTHOR: HAMZA ELKOPA]<br>
-            [SYSTEM: STABLE]<br>
-            [MATRIX_DRIVE: ACTIVE]<br>
-            [SESSION: VERIFIED]
+            [STATUS: SPEED_OPTIMIZED]<br>
+            [MARQUEE: SEAMLESS]
         </div>
     </div>
 
@@ -286,11 +277,11 @@
         const marqueeBox = document.getElementById('marqueeBox');
         const marqueeItems = document.getElementById('marqueeItems');
         const userInput = document.getElementById('userInput');
-        const toggleBtn = document.getElementById('toggleBtn');
-        const mainOverlay = document.getElementById('mainOverlay');
         const settingsModal = document.getElementById('settingsModal');
         const autoCodeScreen = document.getElementById('auto-code-screen');
         const codeDisplay = document.getElementById('code-display');
+        const exitPythonBtn = document.getElementById('exitPythonBtn');
+        const settingsBtn = document.getElementById('settingsBtn');
 
         let autoCodeInterval;
 
@@ -301,71 +292,35 @@
         function updateText() {
             const val = userInput.value.trim();
             if (val === "") return;
+            // تكرار الكلمة 12 مرة لضمان تتابعها بشكل مثالي في الشريط السريع
             const content = `<div class="marquee-text">${val}</div>`;
-            marqueeItems.innerHTML = content.repeat(8);
-            if (marqueeBox.classList.contains('hidden')) toggleMarquee();
+            marqueeItems.innerHTML = content.repeat(12);
             toggleModal();
         }
 
         function toggleMarquee() {
-            const isHidden = marqueeBox.classList.toggle('hidden');
-            if (isHidden) {
-                toggleBtn.innerText = "إظهار";
-                toggleBtn.style.background = "#00ff00";
-                toggleBtn.style.color = "#000";
-                mainOverlay.style.background = "rgba(0, 0, 0, 0.1)";
-            } else {
-                toggleBtn.innerText = "إخفاء";
-                toggleBtn.style.background = "#ff0000";
-                toggleBtn.style.color = "white";
-                mainOverlay.style.background = "rgba(0, 0, 0, 0.4)";
-            }
+            marqueeBox.classList.toggle('hidden');
         }
 
-        /* قوالب كود بايثون */
         const pythonLines = [
             { text: "import", type: "py-keyword" },
-            { text: " os, sys, socket, threading\n", type: "py-normal" },
-            { text: "# Initializing exploit sequence\n", type: "py-comment" },
+            { text: " socket, sys, time, random\n", type: "py-normal" },
             { text: "def", type: "py-keyword" },
-            { text: " connect_to_target", type: "py-func" },
-            { text: "(ip_address, port):\n", type: "py-normal" },
-            { text: "    try", type: "py-keyword" },
-            { text: ":\n        server =", type: "py-normal" },
-            { text: " socket.socket", type: "py-func" },
-            { text: "(socket.AF_INET, socket.SOCK_STREAM)\n", type: "py-normal" },
-            { text: "        server.", type: "py-normal" },
-            { text: "connect", type: "py-func" },
-            { text: "((ip_address, port))\n", type: "py-normal" },
-            { text: "        ", type: "py-normal" },
-            { text: "print", type: "py-builtin" },
+            { text: " trigger_exploit", type: "py-func" },
+            { text: "(target_ip):\n    ", type: "py-normal" },
+            { text: "print", type: "py-keyword" },
             { text: "(", type: "py-normal" },
-            { text: "f\"Connected to {ip_address}\"", type: "py-string" },
-            { text: ")\n", type: "py-normal" },
-            { text: "    except", type: "py-keyword" },
-            { text: " Exception ", type: "py-normal" },
-            { text: "as", type: "py-keyword" },
-            { text: " e:\n        return ", type: "py-normal" },
-            { text: "None", type: "py-keyword" },
-            { text: "\n\nif", type: "py-keyword" },
-            { text: " __name__ == ", type: "py-normal" },
-            { text: "\"__main__\"", type: "py-string" },
-            { text: ":\n    payload =", type: "py-normal" },
-            { text: " \"0xAF77B1\"", type: "py-string" },
-            { text: "\n    target_list = [", type: "py-normal" },
-            { text: "102, 105, 201, 80", type: "py-number" },
-            { text: "]\n    ", type: "py-normal" },
-            { text: "for", type: "py-keyword" },
-            { text: " t ", type: "py-normal" },
-            { text: "in", type: "py-keyword" },
-            { text: " target_list:\n        ", type: "py-normal" },
-            { text: "exec_payload", type: "py-func" },
-            { text: "(t, payload)\n", type: "py-normal" }
+            { text: "\"[*] Executing shellcode...\"", type: "py-string" },
+            { text: ")\n    ", type: "py-normal" },
+            { text: "return", type: "py-keyword" },
+            { text: " True\n", type: "py-normal" }
         ];
 
         function startAutoCode() {
             autoCodeScreen.style.display = 'block';
-            toggleModal();
+            exitPythonBtn.style.display = 'flex'; 
+            settingsBtn.style.display = 'none'; 
+            settingsModal.classList.remove('active');
             codeDisplay.innerHTML = "";
             let lineIndex = 0;
             
@@ -375,22 +330,19 @@
                 span.className = line.type;
                 span.innerText = line.text;
                 codeDisplay.appendChild(span);
-
                 lineIndex++;
                 autoCodeScreen.scrollTop = autoCodeScreen.scrollHeight;
-
-                if (codeDisplay.innerText.length > 3000) {
-                    codeDisplay.innerHTML = "";
-                }
-            }, 60);
+            }, 50);
         }
 
         function stopAutoCode() {
             autoCodeScreen.style.display = 'none';
+            exitPythonBtn.style.display = 'none'; 
+            settingsBtn.style.display = 'flex'; 
             clearInterval(autoCodeInterval);
         }
 
-        /* Matrix Logic */
+        /* Matrix Rain Logic */
         const canvas = document.getElementById('matrix-canvas');
         const ctx = canvas.getContext('2d');
         function resize() {
@@ -400,15 +352,15 @@
         window.addEventListener('resize', resize);
         resize();
 
-        const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789$#@%&*";
-        const fontSize = 18;
+        const chars = "0123456789ABCDEF";
+        const fontSize = 16;
         const columns = Math.floor(canvas.width / fontSize);
         const drops = Array(columns).fill(1);
 
         function draw() {
             ctx.fillStyle = "rgba(0, 0, 0, 0.08)";
             ctx.fillRect(0, 0, canvas.width, canvas.height);
-            ctx.fillStyle = "#0F0"; 
+            ctx.fillStyle = "#00ff00"; 
             ctx.font = fontSize + "px monospace";
             for (let i = 0; i < drops.length; i++) {
                 const char = chars.charAt(Math.floor(Math.random() * chars.length));
@@ -420,11 +372,6 @@
         setInterval(draw, 33);
 
         userInput.addEventListener("keypress", (e) => { if (e.key === "Enter") updateText(); });
-        document.addEventListener('mousedown', (e) => {
-            if (!settingsModal.contains(e.target) && !document.querySelector('.settings-trigger').contains(e.target)) {
-                settingsModal.classList.remove('active');
-            }
-        });
     </script>
 </body>
 </html>
