@@ -1,346 +1,518 @@
-<!DOCTYPE html>
-<html lang="ar" dir="rtl">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>CineMate AI Pro - المنصة السينمائية المتكاملة</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <style>
-        @import url('https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;600;700&display=swap');
+import React, { useState, useEffect, useMemo } from 'react';
+import { initializeApp } from 'firebase/app';
+import { 
+  getFirestore, collection, doc, setDoc, getDoc, 
+  onSnapshot, query, addDoc, updateDoc, arrayUnion, 
+  arrayRemove, serverTimestamp, deleteDoc
+} from 'firebase/firestore';
+import { 
+  getAuth, signInAnonymously, onAuthStateChanged, 
+  signInWithCustomToken, signOut 
+} from 'firebase/auth';
+import { 
+  Home, Search, Compass, PlaySquare, MessageCircle, 
+  Heart, PlusSquare, User, Menu, MoreHorizontal, 
+  Bookmark, Send, Smile, Film, X, Camera, Grid, 
+  Settings, LogOut, ChevronLeft, Info, Edit3, Check, 
+  Trash2, Lock, UserPlus, LogIn, Loader2
+} from 'lucide-react';
+
+// --- إعدادات Firebase ---
+const firebaseConfig = JSON.parse(__firebase_config);
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const db = getFirestore(app);
+const appId = typeof __app_id !== 'undefined' ? __app_id : 'insta-clone-final';
+
+export default function App() {
+  const [user, setUser] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [view, setView] = useState('feed'); 
+  const [posts, setPosts] = useState([]);
+  const [userData, setUserData] = useState(null);
+  const [authMode, setAuthMode] = useState('signup'); // 'login' or 'signup'
+  
+  // UI States
+  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+  const [isEditProfileOpen, setIsEditProfileOpen] = useState(false);
+  const [notifications, setNotifications] = useState([]);
+
+  // Auth Form States
+  const [formUsername, setFormUsername] = useState('');
+  const [formFullName, setFormFullName] = useState('');
+  const [formBio, setFormBio] = useState('');
+
+  // 1. إدارة المصادقة (Auth Logic)
+  useEffect(() => {
+    const initAuth = async () => {
+      try {
+        if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+          await signInWithCustomToken(auth, __initial_auth_token);
+        } else {
+          await signInAnonymously(auth);
+        }
+      } catch (err) {
+        console.error("Auth Error", err);
+      }
+    };
+    initAuth();
+
+    const unsubscribe = onAuthStateChanged(auth, (authUser) => {
+      setUser(authUser);
+      if (!authUser) setLoading(false);
+    });
+    return () => unsubscribe();
+  }, []);
+
+  // 2. جلب بيانات المستخدم الحالية (User Profile)
+  useEffect(() => {
+    if (!user) return;
+    const userDocRef = doc(db, 'artifacts', appId, 'users', user.uid, 'profile', 'info');
+    const unsubscribe = onSnapshot(userDocRef, (docSnap) => {
+      if (docSnap.exists()) {
+        setUserData(docSnap.data());
+      }
+      setLoading(false);
+    }, (err) => {
+      console.error("Profile Fetch Error", err);
+      setLoading(false);
+    });
+    return () => unsubscribe();
+  }, [user]);
+
+  // 3. جلب المنشورات من قاعدة البيانات (Posts)
+  useEffect(() => {
+    if (!user || !userData) return;
+    const postsCol = collection(db, 'artifacts', appId, 'public', 'data', 'posts');
+    const unsubscribe = onSnapshot(postsCol, (snapshot) => {
+      const fetchedPosts = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      // ترتيب في الذاكرة (Rule 2)
+      setPosts(fetchedPosts.sort((a, b) => (b.createdAt?.seconds || 0) - (a.createdAt?.seconds || 0)));
+    }, (err) => console.error("Posts Error", err));
+    return () => unsubscribe();
+  }, [user, userData]);
+
+  const addNotification = (text) => {
+    const id = Date.now();
+    setNotifications(prev => [{ id, text }, ...prev]);
+    setTimeout(() => setNotifications(prev => prev.filter(n => n.id !== id)), 3000);
+  };
+
+  // --- العمليات (Actions) ---
+
+  const handleAuthSubmit = async () => {
+    if (authMode === 'signup') {
+      if (!formUsername || !formFullName) return;
+      const userDocRef = doc(db, 'artifacts', appId, 'users', user.uid, 'profile', 'info');
+      await setDoc(userDocRef, {
+        username: formUsername.toLowerCase().trim(),
+        fullName: formFullName.trim(),
+        avatar: `https://api.dicebear.com/7.x/avataaars/svg?seed=${formUsername}`,
+        bio: formBio || 'مرحباً بك في ملفي الشخصي!',
+        uid: user.uid,
+        joinedAt: serverTimestamp()
+      });
+      addNotification("تم إنشاء الحساب بنجاح!");
+    } else {
+      // في وضع Login الفعلي سنحتاج لإيميل وكلمة سر، هنا نقوم بمحاكاة "الدخول" 
+      // عبر فحص وجود الوثيقة في Firestore بناءً على الـ UID الحالي
+      const userDocRef = doc(db, 'artifacts', appId, 'users', user.uid, 'profile', 'info');
+      const snap = await getDoc(userDocRef);
+      if (snap.exists()) {
+        setUserData(snap.data());
+        addNotification("تم تسجيل الدخول بنجاح!");
+      } else {
+        addNotification("لا يوجد حساب مرتبط، يرجى إنشاء حساب أولاً.");
+        setAuthMode('signup');
+      }
+    }
+  };
+
+  const handleUpdateProfile = async (updatedData) => {
+    if (!user) return;
+    const userDocRef = doc(db, 'artifacts', appId, 'users', user.uid, 'profile', 'info');
+    await updateDoc(userDocRef, updatedData);
+    setIsEditProfileOpen(false);
+    addNotification("تم تحديث الملف الشخصي");
+  };
+
+  const handleCreatePost = async (imageUrl, caption) => {
+    if (!imageUrl || !userData) return;
+    await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'posts'), {
+      userId: user.uid,
+      username: userData.username,
+      userImage: userData.avatar,
+      postImage: imageUrl,
+      caption,
+      likes: [],
+      comments: [],
+      createdAt: serverTimestamp()
+    });
+    setIsCreateModalOpen(false);
+    addNotification("تم نشر المنشور بنجاح!");
+  };
+
+  const handleToggleLike = async (postId, currentLikes) => {
+    const postRef = doc(db, 'artifacts', appId, 'public', 'data', 'posts', postId);
+    const isLiked = currentLikes.includes(user.uid);
+    await updateDoc(postRef, {
+      likes: isLiked ? arrayRemove(user.uid) : arrayUnion(user.uid)
+    });
+  };
+
+  const handleAddComment = async (postId, text) => {
+    if (!text.trim()) return;
+    const postRef = doc(db, 'artifacts', appId, 'public', 'data', 'posts', postId);
+    await updateDoc(postRef, {
+      comments: arrayUnion({
+        id: Date.now(),
+        username: userData.username,
+        text: text.trim(),
+        createdAt: new Date().toISOString()
+      })
+    });
+  };
+
+  const handleDeletePost = async (postId) => {
+    await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'posts', postId));
+    addNotification("تم حذف المنشور");
+  };
+
+  if (loading) return (
+    <div className="h-screen w-screen flex flex-col items-center justify-center bg-black gap-4">
+      <Loader2 className="w-10 h-10 animate-spin text-sky-500" />
+      <p className="text-zinc-500 animate-pulse">جاري الاتصال بقاعدة البيانات...</p>
+    </div>
+  );
+
+  // شاشة الدخول والتسجيل
+  if (!user || !userData) {
+    return (
+      <div className="h-screen flex items-center justify-center bg-black p-4 font-sans" dir="rtl">
+        <div className="max-w-md w-full bg-zinc-900 border border-zinc-800 p-8 rounded-2xl shadow-2xl text-center">
+          <h1 className="text-4xl font-bold italic mb-8 text-white tracking-tighter">Instagram</h1>
+          
+          <div className="flex bg-zinc-800 p-1 rounded-lg mb-6">
+            <button 
+              onClick={() => setAuthMode('login')}
+              className={`flex-1 py-2 rounded-md transition ${authMode === 'login' ? 'bg-zinc-700 text-white shadow' : 'text-zinc-400'}`}
+            >تسجيل الدخول</button>
+            <button 
+              onClick={() => setAuthMode('signup')}
+              className={`flex-1 py-2 rounded-md transition ${authMode === 'signup' ? 'bg-zinc-700 text-white shadow' : 'text-zinc-400'}`}
+            >حساب جديد</button>
+          </div>
+
+          <div className="space-y-4">
+            {authMode === 'signup' && (
+              <>
+                <input 
+                  type="text" 
+                  placeholder="اسم المستخدم (مثال: ahmad_99)" 
+                  className="w-full p-3 rounded-lg bg-zinc-800 border border-zinc-700 text-white focus:border-sky-500 outline-none transition"
+                  value={formUsername}
+                  onChange={(e) => setFormUsername(e.target.value)}
+                />
+                <input 
+                  type="text" 
+                  placeholder="الاسم الكامل" 
+                  className="w-full p-3 rounded-lg bg-zinc-800 border border-zinc-700 text-white focus:border-sky-500 outline-none transition"
+                  value={formFullName}
+                  onChange={(e) => setFormFullName(e.target.value)}
+                />
+                <textarea 
+                  placeholder="نبذة عنك (اختياري)" 
+                  className="w-full p-3 rounded-lg bg-zinc-800 border border-zinc-700 text-white focus:border-sky-500 outline-none transition min-h-[80px]"
+                  value={formBio}
+                  onChange={(e) => setFormBio(e.target.value)}
+                />
+              </>
+            )}
+            
+            {authMode === 'login' && (
+              <p className="text-zinc-400 text-sm py-4">انقر على الزر أدناه للدخول إلى حسابك المرتبط بجهازك الحالي.</p>
+            )}
+
+            <button 
+              onClick={handleAuthSubmit}
+              className="w-full bg-sky-500 text-white font-bold py-3 rounded-lg hover:bg-sky-600 transition shadow-lg shadow-sky-500/20"
+            >
+              {authMode === 'signup' ? 'إنشاء الحساب' : 'دخول'}
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="dark bg-black min-h-screen text-white font-sans" dir="rtl">
+      <div className="flex">
         
-        body {
-            font-family: 'Cairo', sans-serif;
-            background-color: #080808;
-            color: #d1d1d1;
-        }
-
-        .glass-header {
-            background: rgba(180, 0, 0, 0.95);
-            backdrop-filter: blur(12px);
-            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
-        }
-
-        #chat-box::-webkit-scrollbar {
-            width: 4px;
-        }
-        #chat-box::-webkit-scrollbar-thumb {
-            background: #b91c1c;
-            border-radius: 10px;
-        }
-
-        .message-anim {
-            animation: slideIn 0.3s ease-out;
-        }
-
-        @keyframes slideIn {
-            from { opacity: 0; transform: translateY(10px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-
-        .poster-img {
-            max-width: 200px;
-            border-radius: 8px;
-            box-shadow: 0 8px 20px rgba(0,0,0,0.6);
-            margin: 8px 0;
-            border: 1px solid #b91c1c;
-        }
-
-        .glow-button {
-            transition: all 0.2s ease;
-        }
-        .glow-button:hover {
-            filter: brightness(1.2);
-            transform: translateY(-1px);
-        }
-
-        .ai-bubble {
-            background: #1a1a1a;
-            border: 1px solid rgba(255,255,255,0.05);
-        }
-
-        .user-bubble {
-            background: #b91c1c;
-        }
-
-        .suggestion-chip {
-            transition: all 0.2s;
-            cursor: pointer;
-            white-space: nowrap;
-        }
-        .suggestion-chip:hover {
-            background: #b91c1c;
-            color: white;
-            border-color: #b91c1c;
-        }
-    </style>
-</head>
-<body class="h-screen flex items-center justify-center p-0 sm:p-6">
-
-    <div class="app-container w-full max-w-3xl h-full sm:h-[85vh] bg-[#0f0f0f] rounded-none sm:rounded-2xl flex flex-col overflow-hidden shadow-2xl border border-white/5">
-        
-        <!-- Header -->
-        <header class="glass-header px-5 py-3 flex justify-between items-center z-10">
-            <div class="flex items-center gap-3">
-                <div class="bg-white p-1.5 rounded-md text-red-700 shadow-md">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 4v16M17 4v16M3 8h4m10 0h4M3 12h18M3 16h4m10 0h4M4 20h16a1 1 0 001-1V5a1 1 0 00-1-1H4a1 1 0 00-1 1v14a1 1 0 001 1z" />
-                    </svg>
-                </div>
-                <div>
-                    <h1 class="font-bold text-lg text-white leading-tight">CineMate <span class="text-[10px] tracking-widest bg-black/20 px-1.5 py-0.5 rounded border border-white/10 ml-1">PRO</span></h1>
-                    <p class="text-[10px] text-white/70 uppercase tracking-tighter">AI Film Critic Platform</p>
-                </div>
+        {/* Notifications */}
+        <div className="fixed top-5 left-1/2 -translate-x-1/2 z-[200] space-y-2">
+          {notifications.map(n => (
+            <div key={n.id} className="bg-zinc-800 text-white px-6 py-3 rounded-full shadow-2xl border border-zinc-700 flex items-center gap-2 animate-in slide-in-from-top">
+               <Check className="w-4 h-4 text-green-500" /> {n.text}
             </div>
-            <button onclick="clearChat()" class="text-white/50 hover:text-white text-[11px] font-medium transition-colors">إعادة ضبط الجلسة</button>
-        </header>
-
-        <!-- Suggestions Bar -->
-        <div class="bg-black/40 border-b border-white/5 p-2 overflow-x-auto flex gap-2 no-scrollbar">
-            <div onclick="quickAsk('اقترح لي أفضل 5 أفلام دراما في العقد الأخير')" class="suggestion-chip px-3 py-1 rounded-full border border-white/10 text-[10px] text-gray-400">🎭 دراما</div>
-            <div onclick="quickAsk('أفلام خيال علمي بنهايات غير متوقعة')" class="suggestion-chip px-3 py-1 rounded-full border border-white/10 text-[10px] text-gray-400">🚀 خيال علمي</div>
-            <div onclick="quickAsk('أفلام غموض وجريمة ستجعلني أفكر طويلاً')" class="suggestion-chip px-3 py-1 rounded-full border border-white/10 text-[10px] text-gray-400">🔍 غموض</div>
-            <div onclick="quickAsk('روائع السينما الكلاسيكية التي يجب مشاهدتها')" class="suggestion-chip px-3 py-1 rounded-full border border-white/10 text-[10px] text-gray-400">🎞️ كلاسيكيات</div>
-            <div onclick="quickAsk('اقترح لي فيلماً عشوائياً ممتعاً لسهرة الليلة')" class="suggestion-chip px-3 py-1 rounded-full border border-white/10 text-[10px] text-gray-400">🎲 عشوائي</div>
+          ))}
         </div>
 
-        <!-- Chat Area -->
-        <main id="chat-box" class="flex-1 overflow-y-auto p-5 space-y-5 bg-[radial-gradient(circle_at_center,_#121212_0%,_#080808_100%)]">
-            <!-- AI Welcome Message -->
-            <div class="message-anim flex flex-col items-start max-w-[85%]">
-                <div class="ai-bubble text-white/90 px-4 py-3 rounded-xl rounded-tr-none shadow-sm text-sm border-l-2 border-red-600">
-                    مرحباً بك. أنا CineMate AI. كيف يمكنني إثراء تجربتك السينمائية اليوم؟ 🎞️
-                    <div class="mt-3 grid grid-cols-2 gap-2">
-                        <div class="text-[10px] bg-white/5 p-2 rounded border border-white/5">● توصيات مخصصة</div>
-                        <div class="text-[10px] bg-white/5 p-2 rounded border border-white/5">● تحليل تقني ومعمّق</div>
-                    </div>
-                </div>
-                <span class="text-[9px] text-gray-600 mt-1 mr-1 uppercase tracking-widest">System Engine • Active</span>
+        {/* Sidebar */}
+        <nav className="fixed right-0 h-screen w-[70px] xl:w-[245px] border-l border-zinc-800 p-4 flex flex-col justify-between z-50 bg-black">
+          <div className="flex flex-col gap-2">
+            <div className="py-8 px-3 cursor-pointer" onClick={() => setView('feed')}>
+              <h1 className="text-2xl font-bold italic hidden xl:block">Instagram</h1>
+              <div className="xl:hidden w-8 h-8 bg-gradient-to-tr from-yellow-400 via-red-500 to-purple-600 rounded-lg"></div>
             </div>
+            
+            <NavItem icon={Home} label="الرئيسية" active={view === 'feed'} onClick={() => setView('feed')} />
+            <NavItem icon={Search} label="بحث" />
+            <NavItem icon={PlusSquare} label="إنشاء" onClick={() => setIsCreateModalOpen(true)} />
+            <NavItem img={userData.avatar} label="الملف الشخصي" active={view === 'profile'} onClick={() => setView('profile')} />
+          </div>
+          <NavItem icon={LogOut} label="خروج" onClick={() => auth.signOut()} />
+        </nav>
+
+        {/* Main Content */}
+        <main className="flex-1 mr-[70px] xl:mr-[245px] flex flex-col items-center">
+          
+          {view === 'feed' && (
+            <div className="w-full max-w-[470px] pt-8 px-4">
+              {posts.map(post => (
+                <PostCard 
+                  key={post.id} 
+                  post={post} 
+                  currentUserId={user.uid}
+                  onLike={() => handleToggleLike(post.id, post.likes)}
+                  onComment={(txt) => handleAddComment(post.id, txt)}
+                  onDelete={() => handleDeletePost(post.id)}
+                />
+              ))}
+              {posts.length === 0 && (
+                <div className="text-center py-20 text-zinc-500">
+                  <Camera className="w-12 h-12 mx-auto mb-4 opacity-20" />
+                  <p>لا توجد منشورات حالياً. ابدأ بمشاركة أولى لحظاتك!</p>
+                </div>
+              )}
+            </div>
+          )}
+
+          {view === 'profile' && (
+            <div className="w-full max-w-4xl p-8 animate-in fade-in duration-500">
+              <header className="flex flex-col md:flex-row gap-12 items-center md:items-start mb-12">
+                <div className="relative group">
+                  <img src={userData.avatar} className="w-40 h-40 rounded-full border-2 border-zinc-800 p-1" />
+                  <div className="absolute inset-0 bg-black/40 rounded-full opacity-0 group-hover:opacity-100 flex items-center justify-center cursor-pointer transition">
+                    <Edit3 className="text-white" />
+                  </div>
+                </div>
+                <div className="flex flex-col gap-6 flex-1 text-center md:text-right">
+                  <div className="flex flex-col md:flex-row items-center gap-4">
+                    <h2 className="text-2xl font-light">{userData.username}</h2>
+                    <button 
+                      onClick={() => setIsEditProfileOpen(true)}
+                      className="bg-zinc-800 hover:bg-zinc-700 px-6 py-1.5 rounded-lg font-semibold text-sm transition"
+                    >تعديل الملف الشخصي</button>
+                    <Settings className="w-6 h-6 cursor-pointer" />
+                  </div>
+                  <div className="flex justify-center md:justify-start gap-10">
+                    <span><b>{posts.filter(p => p.userId === user.uid).length}</b> منشورات</span>
+                    <span><b>0</b> متابعون</span>
+                    <span><b>0</b> يتابع</span>
+                  </div>
+                  <div>
+                    <p className="font-bold">{userData.fullName}</p>
+                    <p className="text-zinc-400 text-sm whitespace-pre-line mt-1">{userData.bio}</p>
+                  </div>
+                </div>
+              </header>
+              <div className="border-t border-zinc-800 grid grid-cols-3 gap-1 mt-6">
+                {posts.filter(p => p.userId === user.uid).map(p => (
+                  <div key={p.id} className="aspect-square bg-zinc-900 group relative cursor-pointer">
+                    <img src={p.postImage} className="w-full h-full object-cover" />
+                    <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center gap-4 transition">
+                       <span className="flex items-center gap-1 font-bold"><Heart className="fill-white w-5 h-5" /> {p.likes.length}</span>
+                       <span className="flex items-center gap-1 font-bold"><MessageCircle className="fill-white w-5 h-5" /> {p.comments.length}</span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
         </main>
 
-        <!-- Input Area -->
-        <footer class="px-5 py-4 bg-[#0a0a0a] border-t border-white/5">
-            <div class="flex items-center gap-3 bg-[#161616] p-1.5 pl-2 rounded-xl border border-white/5 focus-within:border-red-800/50 transition-all duration-300">
-                <button onclick="generatePosterPrompt()" title="توليد بوستر" class="p-2 text-gray-500 hover:text-red-600 transition-colors">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2-2v12a2 2 0 002 2z" />
-                    </svg>
-                </button>
-                <input type="text" id="user-input" 
-                       class="flex-1 bg-transparent border-none outline-none text-white text-xs px-1" 
-                       placeholder="اطلب توصية لفيلم أو ابحث عن معلومة..."
-                       onkeypress="if(event.key === 'Enter') sendMessage()">
-                <button onclick="sendMessage()" class="glow-button bg-red-700 text-white p-2 rounded-lg shadow-lg">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 transform rotate-180" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
-                    </svg>
-                </button>
-            </div>
-            <p class="text-[9px] text-center text-gray-600 mt-2 italic">يعمل بواسطة Gemini 2.5 Flash & Imagen AI</p>
-        </footer>
+        {/* Modals */}
+        {isCreateModalOpen && (
+          <Modal title="إنشاء منشور" onClose={() => setIsCreateModalOpen(false)}>
+            <CreatePostForm onPublish={handleCreatePost} />
+          </Modal>
+        )}
+
+        {isEditProfileOpen && (
+          <Modal title="تعديل الملف" onClose={() => setIsEditProfileOpen(false)}>
+            <EditProfileForm initialData={userData} onSave={handleUpdateProfile} />
+          </Modal>
+        )}
+
+      </div>
     </div>
+  );
+}
 
-    <script>
-        const apiKey = ""; 
-        let chatHistory = [];
+// --- Components ---
 
-        async function fetchWithRetry(url, options, retries = 5, backoff = 1000) {
-            for (let i = 0; i < retries; i++) {
-                try {
-                    const response = await fetch(url, options);
-                    if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
-                    return await response.json();
-                } catch (err) {
-                    if (i === retries - 1) throw err;
-                    await new Promise(r => setTimeout(r, backoff * Math.pow(2, i)));
-                }
-            }
-        }
+const NavItem = ({ icon: Icon, img, label, active, onClick }) => (
+  <div 
+    onClick={onClick}
+    className={`flex items-center gap-4 p-3 rounded-xl cursor-pointer transition-all hover:bg-zinc-900 group ${active ? 'font-bold bg-zinc-900/50' : ''}`}
+  >
+    {img ? <img src={img} className={`w-6 h-6 rounded-full border ${active ? 'border-white' : 'border-zinc-700'}`} /> : <Icon className="w-6 h-6" />}
+    <span className="hidden xl:block text-lg">{label}</span>
+  </div>
+);
 
-        function appendMessage(role, text, isImage = false) {
-            const chatBox = document.getElementById('chat-box');
-            const messageWrapper = document.createElement('div');
-            messageWrapper.className = `message-anim flex flex-col ${role === 'user' ? 'items-end' : 'items-start'} max-w-[85%] ${role === 'user' ? 'self-end' : 'self-start'}`;
-            
-            const time = new Date().toLocaleTimeString('ar-EG', { hour: '2-digit', minute: '2-digit' });
-            
-            let content = '';
-            if (isImage) {
-                content = `<img src="${text}" class="poster-img" alt="Movie Poster">`;
-            } else {
-                content = `<div class="${role === 'user' ? 'user-bubble text-white' : 'ai-bubble text-white/90'} px-4 py-2.5 rounded-xl ${role === 'user' ? 'rounded-tl-none' : 'rounded-tr-none'} shadow-sm text-sm whitespace-pre-wrap leading-relaxed">${text}</div>`;
-            }
+const PostCard = ({ post, currentUserId, onLike, onComment, onDelete }) => {
+  const [commentText, setCommentText] = useState("");
+  const isLiked = post.likes.includes(currentUserId);
+  const isOwner = post.userId === currentUserId;
 
-            messageWrapper.innerHTML = `
-                ${content}
-                <div class="flex items-center gap-2 mt-1 px-1">
-                    <span class="text-[9px] text-gray-600 uppercase tracking-tighter">${role === 'user' ? 'User' : 'CineMate AI'} • ${time}</span>
-                    ${role !== 'user' && !isImage ? `<button onclick="speakText(this)" class="text-[9px] text-red-500/80 hover:text-red-400 font-bold transition-colors uppercase tracking-widest">Listen 🔊</button>` : ''}
-                </div>
-            `;
+  return (
+    <div className="w-full mb-10 border-b border-zinc-900 pb-8 mx-auto animate-in fade-in slide-in-from-bottom-4 duration-500">
+      <div className="flex items-center justify-between p-3">
+        <div className="flex items-center gap-3">
+          <img src={post.userImage} className="w-8 h-8 rounded-full border border-zinc-800" />
+          <span className="font-bold text-sm hover:underline cursor-pointer">{post.username}</span>
+        </div>
+        {isOwner && (
+          <button onClick={onDelete} className="text-zinc-600 hover:text-red-500 transition">
+            <Trash2 className="w-5 h-5" />
+          </button>
+        )}
+      </div>
+      <div className="rounded-xl overflow-hidden bg-zinc-900 shadow-xl">
+        <img 
+          src={post.postImage} 
+          className="w-full h-auto max-h-[600px] object-contain" 
+          onDoubleClick={onLike} 
+        />
+      </div>
+      <div className="flex items-center justify-between py-4 px-1">
+        <div className="flex items-center gap-4">
+          <Heart 
+            onClick={onLike} 
+            className={`w-7 h-7 cursor-pointer transition ${isLiked ? 'fill-red-500 text-red-500 scale-125' : 'hover:scale-110'}`} 
+          />
+          <MessageCircle className="w-7 h-7 cursor-pointer hover:scale-110" />
+          <Send className="w-7 h-7 cursor-pointer hover:scale-110" />
+        </div>
+        <Bookmark className="w-7 h-7 cursor-pointer" />
+      </div>
+      <div className="px-1 text-sm">
+        <p className="font-extrabold mb-1">{post.likes.length.toLocaleString()} إعجاب</p>
+        <p><span className="font-bold ml-2">{post.username}</span>{post.caption}</p>
+        
+        <div className="mt-3 space-y-2">
+          {post.comments.map(c => (
+            <div key={c.id} className="flex gap-2 text-[13px]">
+              <span className="font-bold">{c.username}</span>
+              <span className="text-zinc-300">{c.text}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+      <div className="mt-4 flex gap-3 items-center px-1">
+        <input 
+          type="text" 
+          placeholder="أضف تعليقاً..." 
+          className="bg-transparent flex-1 outline-none text-sm py-1 border-b border-transparent focus:border-zinc-800 transition"
+          value={commentText}
+          onChange={(e) => setCommentText(e.target.value)}
+          onKeyDown={(e) => e.key === 'Enter' && (onComment(commentText), setCommentText(''))}
+        />
+        {commentText && (
+          <button 
+            onClick={() => {onComment(commentText); setCommentText('');}} 
+            className="text-sky-500 font-bold text-sm animate-in fade-in"
+          >نشر</button>
+        )}
+      </div>
+    </div>
+  );
+};
 
-            chatBox.appendChild(messageWrapper);
-            chatBox.scrollTop = chatBox.scrollHeight;
-        }
+const Modal = ({ title, onClose, children }) => (
+  <div className="fixed inset-0 z-[100] bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
+    <div className="bg-zinc-900 w-full max-w-lg rounded-2xl overflow-hidden border border-zinc-800 shadow-2xl animate-in zoom-in duration-200">
+      <div className="p-4 border-b border-zinc-800 flex justify-between items-center">
+        <button onClick={onClose} className="p-1 hover:bg-zinc-800 rounded-full transition"><X /></button>
+        <h3 className="font-bold text-white text-lg">{title}</h3>
+        <div className="w-8"></div>
+      </div>
+      {children}
+    </div>
+  </div>
+);
 
-        function quickAsk(text) {
-            document.getElementById('user-input').value = text;
-            sendMessage();
-        }
+const CreatePostForm = ({ onPublish }) => {
+  const [url, setUrl] = useState('');
+  const [cap, setCap] = useState('');
+  return (
+    <div className="p-6 space-y-6">
+      <div className="space-y-2">
+        <label className="text-xs font-bold text-zinc-500 uppercase">رابط الصورة</label>
+        <input 
+          type="text" 
+          placeholder="مثال: https://images.unsplash.com/..." 
+          className="w-full bg-zinc-800 p-3 rounded-xl outline-none border border-zinc-700 text-white focus:border-sky-500 transition"
+          value={url}
+          onChange={(e) => setUrl(e.target.value)}
+        />
+      </div>
+      {url && <img src={url} className="w-full h-56 object-cover rounded-xl border border-zinc-700 shadow-inner" alt="Preview" />}
+      <div className="space-y-2">
+        <label className="text-xs font-bold text-zinc-500 uppercase">الوصف</label>
+        <textarea 
+          placeholder="ماذا يدور في ذهنك؟" 
+          className="w-full bg-transparent border border-zinc-800 p-3 rounded-xl min-h-[100px] outline-none text-white focus:border-sky-500 transition"
+          value={cap}
+          onChange={(e) => setCap(e.target.value)}
+        />
+      </div>
+      <button 
+        onClick={() => onPublish(url, cap)} 
+        disabled={!url}
+        className="w-full bg-sky-500 py-3 rounded-xl font-bold hover:bg-sky-600 transition disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-sky-500/10"
+      >نشر الآن</button>
+    </div>
+  );
+};
 
-        async function sendMessage() {
-            const inputField = document.getElementById('user-input');
-            const query = inputField.value.trim();
-            if (!query) return;
-
-            inputField.value = '';
-            appendMessage('user', query);
-
-            const loadingId = 'loading-' + Date.now();
-            const chatBox = document.getElementById('chat-box');
-            const loadingDiv = document.createElement('div');
-            loadingDiv.id = loadingId;
-            loadingDiv.className = 'message-anim flex items-start';
-            loadingDiv.innerHTML = `<div class="ai-bubble px-3 py-2 rounded-lg text-gray-400 text-[10px] animate-pulse italic">Processing Cinematic Data...</div>`;
-            chatBox.appendChild(loadingDiv);
-            chatBox.scrollTop = chatBox.scrollHeight;
-
-            try {
-                if (query.includes("بوستر") || query.includes("صورة") || query.includes("صمم")) {
-                    await generateImage(query, loadingId);
-                } else {
-                    await generateText(query, loadingId);
-                }
-            } catch (error) {
-                document.getElementById(loadingId).innerHTML = `<div class="bg-red-900/20 text-red-400 px-3 py-2 rounded-lg text-[10px]">Technical fault detected. Check connectivity.</div>`;
-            }
-        }
-
-        async function generateText(query, loadingId) {
-            const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${apiKey}`;
-            
-            const payload = {
-                contents: [...chatHistory, { parts: [{ text: query }] }],
-                systemInstruction: {
-                    parts: [{ text: "You are CineMate AI Pro, a high-end cinematic intellectual. Respond in professional Arabic. Be concise, analytical, and sophisticated. When suggesting movies, give a brief reason for each recommendation. Focus on technical aspects like cinematography, direction, and script quality." }]
-                },
-                tools: [{ "google_search": {} }]
-            };
-
-            const data = await fetchWithRetry(url, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(payload)
-            });
-
-            const aiText = data.candidates?.[0]?.content?.parts?.[0]?.text || "No data returned.";
-            
-            chatHistory.push({ role: "user", parts: [{ text: query }] });
-            chatHistory.push({ role: "model", parts: [{ text: aiText }] });
-            if (chatHistory.length > 8) chatHistory.shift();
-
-            document.getElementById(loadingId).remove();
-            appendMessage('ai', aiText);
-        }
-
-        async function generateImage(query, loadingId) {
-            const url = `https://generativelanguage.googleapis.com/v1beta/models/imagen-4.0-generate-001:predict?key=${apiKey}`;
-            
-            const promptGenUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${apiKey}`;
-            const promptData = await fetch(promptGenUrl, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    contents: [{ parts: [{ text: `High-end professional movie poster prompt for: ${query}. Focus on 8k resolution, cinematic lighting, dramatic composition, award-winning style.` }] }]
-                })
-            }).then(r => r.json());
-
-            const englishPrompt = promptData.candidates?.[0]?.content?.parts?.[0]?.text || query;
-
-            const response = await fetchWithRetry(url, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    instances: { prompt: englishPrompt },
-                    parameters: { sampleCount: 1 }
-                })
-            });
-
-            const imageUrl = `data:image/png;base64,${response.predictions[0].bytesBase64Encoded}`;
-            
-            document.getElementById(loadingId).remove();
-            appendMessage('ai', "تم إعداد المسودة البصرية المحددة:");
-            appendMessage('ai', imageUrl, true);
-        }
-
-        async function speakText(btn) {
-            const text = btn.parentElement.previousElementSibling.textContent;
-            const originalText = btn.textContent;
-            btn.textContent = "SYNTHESIZING...";
-            
-            try {
-                const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-tts:generateContent?key=${apiKey}`;
-                const response = await fetch(url, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        contents: [{ parts: [{ text: "بصوت هادئ ونقدي: " + text }] }],
-                        generationConfig: { 
-                            responseModalities: ["AUDIO"],
-                            speechConfig: { voiceConfig: { prebuiltVoiceConfig: { voiceName: "Puck" } } } 
-                        },
-                        model: "gemini-2.5-flash-preview-tts"
-                    })
-                });
-
-                const data = await response.json();
-                const pcmData = data.candidates[0].content.parts[0].inlineData.data;
-                const wavUrl = pcmToWavUrl(pcmData, 24000);
-                const audio = new Audio(wavUrl);
-                audio.play();
-                btn.textContent = "STOP ⏹";
-                audio.onended = () => btn.textContent = originalText;
-            } catch (e) {
-                btn.textContent = "ERROR";
-            }
-        }
-
-        function pcmToWavUrl(base64Pcm, sampleRate) {
-            const pcmBuffer = Uint8Array.from(atob(base64Pcm), c => c.charCodeAt(0)).buffer;
-            const wavHeader = new ArrayBuffer(44);
-            const view = new DataView(wavHeader);
-            const writeString = (o, s) => { for (let i = 0; i < s.length; i++) view.setUint8(o + i, s.charCodeAt(i)); };
-            writeString(0, 'RIFF');
-            view.setUint32(4, 32 + pcmBuffer.byteLength, true);
-            writeString(8, 'WAVE');
-            writeString(12, 'fmt ');
-            view.setUint32(16, 16, true);
-            view.setUint16(20, 1, true);
-            view.setUint16(22, 1, true);
-            view.setUint32(24, sampleRate, true);
-            view.setUint32(28, sampleRate * 2, true);
-            view.setUint16(32, 2, true);
-            view.setUint16(34, 16, true);
-            writeString(36, 'data');
-            view.setUint32(40, pcmBuffer.byteLength, true);
-            return URL.createObjectURL(new Blob([wavHeader, pcmBuffer], { type: 'audio/wav' }));
-        }
-
-        function clearChat() {
-            if(confirm("Clear current sequence?")) {
-                document.getElementById('chat-box').innerHTML = `
-                    <div class="message-anim flex flex-col items-start max-w-[85%]">
-                        <div class="ai-bubble text-white/90 px-4 py-3 rounded-xl shadow-sm text-sm">Sequence Reset. Awaiting Input.</div>
-                    </div>
-                `;
-                chatHistory = [];
-            }
-        }
-
-        function generatePosterPrompt() {
-            document.getElementById('user-input').value = "صمم بوستر لفيلم Neo-Noir في مدينة مستقبلية";
-            sendMessage();
-        }
-    </script>
-</body>
-</html>
+const EditProfileForm = ({ initialData, onSave }) => {
+  const [data, setData] = useState(initialData);
+  return (
+    <div className="p-6 space-y-4">
+      <div className="flex flex-col items-center mb-4">
+        <img src={data.avatar} className="w-20 h-20 rounded-full border mb-2" />
+        <button className="text-sky-500 text-xs font-bold">تغيير الصورة (تلقائي)</button>
+      </div>
+      <input 
+        type="text" 
+        placeholder="الاسم الكامل" 
+        className="w-full bg-zinc-800 p-3 rounded-lg border border-zinc-700"
+        value={data.fullName}
+        onChange={(e) => setData({...data, fullName: e.target.value})}
+      />
+      <textarea 
+        placeholder="النبذة التعريفية" 
+        className="w-full bg-zinc-800 p-3 rounded-lg border border-zinc-700 min-h-[80px]"
+        value={data.bio}
+        onChange={(e) => setData({...data, bio: e.target.value})}
+      />
+      <button 
+        onClick={() => onSave(data)}
+        className="w-full bg-white text-black py-3 rounded-lg font-bold hover:bg-zinc-200 transition"
+      >حفظ التغييرات</button>
+    </div>
+  );
+};
