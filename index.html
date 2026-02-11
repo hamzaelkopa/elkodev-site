@@ -1,518 +1,389 @@
-import React, { useState, useEffect, useMemo } from 'react';
-import { initializeApp } from 'firebase/app';
+import React, { useState, useEffect, useRef } from 'react';
+import * as THREE from 'three';
 import { 
-  getFirestore, collection, doc, setDoc, getDoc, 
-  onSnapshot, query, addDoc, updateDoc, arrayUnion, 
-  arrayRemove, serverTimestamp, deleteDoc
-} from 'firebase/firestore';
-import { 
-  getAuth, signInAnonymously, onAuthStateChanged, 
-  signInWithCustomToken, signOut 
-} from 'firebase/auth';
-import { 
-  Home, Search, Compass, PlaySquare, MessageCircle, 
-  Heart, PlusSquare, User, Menu, MoreHorizontal, 
-  Bookmark, Send, Smile, Film, X, Camera, Grid, 
-  Settings, LogOut, ChevronLeft, Info, Edit3, Check, 
-  Trash2, Lock, UserPlus, LogIn, Loader2
+  Plus, 
+  Search, 
+  Trash2, 
+  Save, 
+  X, 
+  Pin, 
+  Tag, 
+  LayoutGrid, 
+  List, 
+  Moon, 
+  Sun,
+  Archive,
+  Compass,
+  Briefcase,
+  BookOpen,
+  User,
+  Lightbulb,
+  FileText,
+  Type,
+  Palette,
+  AlignLeft
 } from 'lucide-react';
 
-// --- إعدادات Firebase ---
-const firebaseConfig = JSON.parse(__firebase_config);
-const app = initializeApp(firebaseConfig);
-const auth = getAuth(app);
-const db = getFirestore(app);
-const appId = typeof __app_id !== 'undefined' ? __app_id : 'insta-clone-final';
+// --- Three.js Background Component ---
+const ThreeBackground = ({ isDarkMode }) => {
+  const mountRef = useRef(null);
 
-export default function App() {
-  const [user, setUser] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [view, setView] = useState('feed'); 
-  const [posts, setPosts] = useState([]);
-  const [userData, setUserData] = useState(null);
-  const [authMode, setAuthMode] = useState('signup'); // 'login' or 'signup'
-  
-  // UI States
-  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
-  const [isEditProfileOpen, setIsEditProfileOpen] = useState(false);
-  const [notifications, setNotifications] = useState([]);
-
-  // Auth Form States
-  const [formUsername, setFormUsername] = useState('');
-  const [formFullName, setFormFullName] = useState('');
-  const [formBio, setFormBio] = useState('');
-
-  // 1. إدارة المصادقة (Auth Logic)
   useEffect(() => {
-    const initAuth = async () => {
-      try {
-        if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
-          await signInWithCustomToken(auth, __initial_auth_token);
-        } else {
-          await signInAnonymously(auth);
-        }
-      } catch (err) {
-        console.error("Auth Error", err);
-      }
-    };
-    initAuth();
+    let width = window.innerWidth;
+    let height = window.innerHeight;
+    
+    const scene = new THREE.Scene();
+    const camera = new THREE.PerspectiveCamera(75, width / height, 0.1, 1000);
+    const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+    
+    renderer.setSize(width, height);
+    renderer.setPixelRatio(window.devicePixelRatio);
+    mountRef.current.appendChild(renderer.domElement);
 
-    const unsubscribe = onAuthStateChanged(auth, (authUser) => {
-      setUser(authUser);
-      if (!authUser) setLoading(false);
+    const particlesCount = 1200;
+    const posArray = new Float32Array(particlesCount * 3);
+    for (let i = 0; i < particlesCount * 3; i++) {
+      posArray[i] = (Math.random() - 0.5) * 10;
+    }
+
+    const particlesGeometry = new THREE.BufferGeometry();
+    particlesGeometry.setAttribute('position', new THREE.BufferAttribute(posArray, 3));
+
+    const particlesMaterial = new THREE.PointsMaterial({
+      size: 0.004,
+      color: isDarkMode ? 0x8c7e6a : 0x5c564e,
+      transparent: true,
+      opacity: 0.25,
     });
-    return () => unsubscribe();
+
+    const particlesMesh = new THREE.Points(particlesGeometry, particlesMaterial);
+    scene.add(particlesMesh);
+    camera.position.z = 3;
+
+    const animate = () => {
+      requestAnimationFrame(animate);
+      particlesMesh.rotation.y += 0.0008;
+      particlesMesh.rotation.x += 0.0003;
+      renderer.render(scene, camera);
+    };
+
+    animate();
+
+    const handleResize = () => {
+      width = window.innerWidth;
+      height = window.innerHeight;
+      renderer.setSize(width, height);
+      camera.aspect = width / height;
+      camera.updateProjectionMatrix();
+    };
+
+    window.addEventListener('resize', handleResize);
+    return () => {
+      window.removeEventListener('resize', handleResize);
+      if (mountRef.current) mountRef.current.removeChild(renderer.domElement);
+    };
+  }, [isDarkMode]);
+
+  return <div ref={mountRef} className="fixed inset-0 -z-10 pointer-events-none" />;
+};
+
+const App = () => {
+  // --- State ---
+  const [notes, setNotes] = useState([]);
+  const [isEditorOpen, setIsEditorOpen] = useState(false);
+  const [currentNote, setCurrentNote] = useState(null);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [filterCategory, setFilterCategory] = useState('الكل');
+  const [viewMode, setViewMode] = useState('grid');
+  const [isDarkMode, setIsDarkMode] = useState(false);
+
+  // Form State
+  const [noteTitle, setNoteTitle] = useState('');
+  const [noteContent, setNoteContent] = useState('');
+  const [noteCategory, setNoteCategory] = useState('عام');
+  const [noteColor, setNoteColor] = useState('bg-[#f4f1ea]');
+  const [noteFont, setNoteFont] = useState('font-serif');
+
+  const categories = [
+    { name: 'الكل', icon: <Compass size={14} /> },
+    { name: 'عام', icon: <FileText size={14} /> },
+    { name: 'عمل', icon: <Briefcase size={14} /> },
+    { name: 'دراسة', icon: <BookOpen size={14} /> },
+    { name: 'شخصي', icon: <User size={14} /> },
+    { name: 'أفكار', icon: <Lightbulb size={14} /> }
+  ];
+
+  const fonts = [
+    { name: 'كلاسيكي (Serif)', value: 'font-serif' },
+    { name: 'آلة كاتبة (Mono)', value: 'font-mono' },
+    { name: 'عصري (Sans)', value: 'font-sans' }
+  ];
+
+  const colors = [
+    { name: 'ورق قديم', class: 'bg-[#f4f1ea]' },
+    { name: 'سيبيا', class: 'bg-[#efe6d5]' },
+    { name: 'وردي باهت', class: 'bg-[#e9e0d8]' },
+    { name: 'أزرق عتيق', class: 'bg-[#d8e0e9]' },
+    { name: 'أبيض عاجي', class: 'bg-[#ffffff]' },
+    { name: 'رمادي حجري', class: 'bg-[#e2e2e2]' }
+  ];
+
+  useEffect(() => {
+    const savedNotes = localStorage.getItem('v3_notes_data');
+    if (savedNotes) setNotes(JSON.parse(savedNotes));
   }, []);
 
-  // 2. جلب بيانات المستخدم الحالية (User Profile)
   useEffect(() => {
-    if (!user) return;
-    const userDocRef = doc(db, 'artifacts', appId, 'users', user.uid, 'profile', 'info');
-    const unsubscribe = onSnapshot(userDocRef, (docSnap) => {
-      if (docSnap.exists()) {
-        setUserData(docSnap.data());
-      }
-      setLoading(false);
-    }, (err) => {
-      console.error("Profile Fetch Error", err);
-      setLoading(false);
-    });
-    return () => unsubscribe();
-  }, [user]);
+    localStorage.setItem('v3_notes_data', JSON.stringify(notes));
+  }, [notes]);
 
-  // 3. جلب المنشورات من قاعدة البيانات (Posts)
-  useEffect(() => {
-    if (!user || !userData) return;
-    const postsCol = collection(db, 'artifacts', appId, 'public', 'data', 'posts');
-    const unsubscribe = onSnapshot(postsCol, (snapshot) => {
-      const fetchedPosts = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-      // ترتيب في الذاكرة (Rule 2)
-      setPosts(fetchedPosts.sort((a, b) => (b.createdAt?.seconds || 0) - (a.createdAt?.seconds || 0)));
-    }, (err) => console.error("Posts Error", err));
-    return () => unsubscribe();
-  }, [user, userData]);
-
-  const addNotification = (text) => {
-    const id = Date.now();
-    setNotifications(prev => [{ id, text }, ...prev]);
-    setTimeout(() => setNotifications(prev => prev.filter(n => n.id !== id)), 3000);
-  };
-
-  // --- العمليات (Actions) ---
-
-  const handleAuthSubmit = async () => {
-    if (authMode === 'signup') {
-      if (!formUsername || !formFullName) return;
-      const userDocRef = doc(db, 'artifacts', appId, 'users', user.uid, 'profile', 'info');
-      await setDoc(userDocRef, {
-        username: formUsername.toLowerCase().trim(),
-        fullName: formFullName.trim(),
-        avatar: `https://api.dicebear.com/7.x/avataaars/svg?seed=${formUsername}`,
-        bio: formBio || 'مرحباً بك في ملفي الشخصي!',
-        uid: user.uid,
-        joinedAt: serverTimestamp()
-      });
-      addNotification("تم إنشاء الحساب بنجاح!");
+  const handleSaveNote = () => {
+    if (!noteTitle && !noteContent) return;
+    if (currentNote) {
+      setNotes(notes.map(n => n.id === currentNote.id ? {
+        ...n, title: noteTitle, content: noteContent, category: noteCategory, color: noteColor, font: noteFont, updatedAt: new Date().toISOString()
+      } : n));
     } else {
-      // في وضع Login الفعلي سنحتاج لإيميل وكلمة سر، هنا نقوم بمحاكاة "الدخول" 
-      // عبر فحص وجود الوثيقة في Firestore بناءً على الـ UID الحالي
-      const userDocRef = doc(db, 'artifacts', appId, 'users', user.uid, 'profile', 'info');
-      const snap = await getDoc(userDocRef);
-      if (snap.exists()) {
-        setUserData(snap.data());
-        addNotification("تم تسجيل الدخول بنجاح!");
-      } else {
-        addNotification("لا يوجد حساب مرتبط، يرجى إنشاء حساب أولاً.");
-        setAuthMode('signup');
-      }
+      setNotes([{
+        id: Date.now(), title: noteTitle, content: noteContent, category: noteCategory, color: noteColor, font: noteFont, isPinned: false, createdAt: new Date().toISOString()
+      }, ...notes]);
     }
+    closeEditor();
   };
 
-  const handleUpdateProfile = async (updatedData) => {
-    if (!user) return;
-    const userDocRef = doc(db, 'artifacts', appId, 'users', user.uid, 'profile', 'info');
-    await updateDoc(userDocRef, updatedData);
-    setIsEditProfileOpen(false);
-    addNotification("تم تحديث الملف الشخصي");
+  const deleteNote = (id) => setNotes(notes.filter(n => n.id !== id));
+  const togglePin = (id) => setNotes(notes.map(n => n.id === id ? { ...n, isPinned: !n.isPinned } : n));
+
+  const openEditor = (note = null) => {
+    if (note) {
+      setCurrentNote(note); setNoteTitle(note.title); setNoteContent(note.content); setNoteCategory(note.category); setNoteColor(note.color); setNoteFont(note.font || 'font-serif');
+    } else {
+      setCurrentNote(null); setNoteTitle(''); setNoteContent(''); setNoteCategory('عام'); setNoteColor('bg-[#f4f1ea]'); setNoteFont('font-serif');
+    }
+    setIsEditorOpen(true);
   };
 
-  const handleCreatePost = async (imageUrl, caption) => {
-    if (!imageUrl || !userData) return;
-    await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'posts'), {
-      userId: user.uid,
-      username: userData.username,
-      userImage: userData.avatar,
-      postImage: imageUrl,
-      caption,
-      likes: [],
-      comments: [],
-      createdAt: serverTimestamp()
-    });
-    setIsCreateModalOpen(false);
-    addNotification("تم نشر المنشور بنجاح!");
-  };
+  const closeEditor = () => { setIsEditorOpen(false); setCurrentNote(null); };
 
-  const handleToggleLike = async (postId, currentLikes) => {
-    const postRef = doc(db, 'artifacts', appId, 'public', 'data', 'posts', postId);
-    const isLiked = currentLikes.includes(user.uid);
-    await updateDoc(postRef, {
-      likes: isLiked ? arrayRemove(user.uid) : arrayUnion(user.uid)
-    });
-  };
-
-  const handleAddComment = async (postId, text) => {
-    if (!text.trim()) return;
-    const postRef = doc(db, 'artifacts', appId, 'public', 'data', 'posts', postId);
-    await updateDoc(postRef, {
-      comments: arrayUnion({
-        id: Date.now(),
-        username: userData.username,
-        text: text.trim(),
-        createdAt: new Date().toISOString()
-      })
-    });
-  };
-
-  const handleDeletePost = async (postId) => {
-    await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'posts', postId));
-    addNotification("تم حذف المنشور");
-  };
-
-  if (loading) return (
-    <div className="h-screen w-screen flex flex-col items-center justify-center bg-black gap-4">
-      <Loader2 className="w-10 h-10 animate-spin text-sky-500" />
-      <p className="text-zinc-500 animate-pulse">جاري الاتصال بقاعدة البيانات...</p>
-    </div>
-  );
-
-  // شاشة الدخول والتسجيل
-  if (!user || !userData) {
-    return (
-      <div className="h-screen flex items-center justify-center bg-black p-4 font-sans" dir="rtl">
-        <div className="max-w-md w-full bg-zinc-900 border border-zinc-800 p-8 rounded-2xl shadow-2xl text-center">
-          <h1 className="text-4xl font-bold italic mb-8 text-white tracking-tighter">Instagram</h1>
-          
-          <div className="flex bg-zinc-800 p-1 rounded-lg mb-6">
-            <button 
-              onClick={() => setAuthMode('login')}
-              className={`flex-1 py-2 rounded-md transition ${authMode === 'login' ? 'bg-zinc-700 text-white shadow' : 'text-zinc-400'}`}
-            >تسجيل الدخول</button>
-            <button 
-              onClick={() => setAuthMode('signup')}
-              className={`flex-1 py-2 rounded-md transition ${authMode === 'signup' ? 'bg-zinc-700 text-white shadow' : 'text-zinc-400'}`}
-            >حساب جديد</button>
-          </div>
-
-          <div className="space-y-4">
-            {authMode === 'signup' && (
-              <>
-                <input 
-                  type="text" 
-                  placeholder="اسم المستخدم (مثال: ahmad_99)" 
-                  className="w-full p-3 rounded-lg bg-zinc-800 border border-zinc-700 text-white focus:border-sky-500 outline-none transition"
-                  value={formUsername}
-                  onChange={(e) => setFormUsername(e.target.value)}
-                />
-                <input 
-                  type="text" 
-                  placeholder="الاسم الكامل" 
-                  className="w-full p-3 rounded-lg bg-zinc-800 border border-zinc-700 text-white focus:border-sky-500 outline-none transition"
-                  value={formFullName}
-                  onChange={(e) => setFormFullName(e.target.value)}
-                />
-                <textarea 
-                  placeholder="نبذة عنك (اختياري)" 
-                  className="w-full p-3 rounded-lg bg-zinc-800 border border-zinc-700 text-white focus:border-sky-500 outline-none transition min-h-[80px]"
-                  value={formBio}
-                  onChange={(e) => setFormBio(e.target.value)}
-                />
-              </>
-            )}
-            
-            {authMode === 'login' && (
-              <p className="text-zinc-400 text-sm py-4">انقر على الزر أدناه للدخول إلى حسابك المرتبط بجهازك الحالي.</p>
-            )}
-
-            <button 
-              onClick={handleAuthSubmit}
-              className="w-full bg-sky-500 text-white font-bold py-3 rounded-lg hover:bg-sky-600 transition shadow-lg shadow-sky-500/20"
-            >
-              {authMode === 'signup' ? 'إنشاء الحساب' : 'دخول'}
-            </button>
-          </div>
-        </div>
-      </div>
-    );
-  }
+  const filteredNotes = notes
+    .filter(n => (n.title.toLowerCase().includes(searchTerm.toLowerCase()) || n.content.toLowerCase().includes(searchTerm.toLowerCase())) && (filterCategory === 'الكل' || n.category === filterCategory))
+    .sort((a, b) => (b.isPinned ? 1 : 0) - (a.isPinned ? 1 : 0));
 
   return (
-    <div className="dark bg-black min-h-screen text-white font-sans" dir="rtl">
-      <div className="flex">
-        
-        {/* Notifications */}
-        <div className="fixed top-5 left-1/2 -translate-x-1/2 z-[200] space-y-2">
-          {notifications.map(n => (
-            <div key={n.id} className="bg-zinc-800 text-white px-6 py-3 rounded-full shadow-2xl border border-zinc-700 flex items-center gap-2 animate-in slide-in-from-top">
-               <Check className="w-4 h-4 text-green-500" /> {n.text}
+    <div className={`flex min-h-screen transition-colors duration-500 font-serif ${isDarkMode ? 'bg-[#121212] text-[#d4c5b3]' : 'bg-[#f9f7f2] text-[#3e3a35]'}`} dir="rtl">
+      
+      <ThreeBackground isDarkMode={isDarkMode} />
+
+      {/* Sidebar */}
+      <aside className={`w-56 fixed h-full z-40 flex flex-col border-l transition-all duration-300 backdrop-blur-md ${isDarkMode ? 'bg-[#1a1a1a]/90 border-[#333]' : 'bg-[#f4f1ea]/90 border-[#dcd7cc]'}`}>
+        <div className="p-5">
+          <div className="flex flex-col items-center text-center mb-6 border-b border-[#dcd7cc] dark:border-[#333] pb-4">
+            <div className={`p-2 rounded-full mb-2 ${isDarkMode ? 'bg-[#333]' : 'bg-[#efe6d5]'}`}>
+              <Type size={18} className="text-[#8c7e6a]" />
             </div>
-          ))}
+            <h1 className="text-[10px] font-bold tracking-[0.2em] uppercase">الأرشيف المطور</h1>
+            <p className="text-[7px] text-[#8c7e6a] uppercase mt-1">تخصيص كامل للمخطوطات</p>
+          </div>
+
+          <button 
+            onClick={() => openEditor()}
+            className={`w-full py-2 rounded-sm border flex items-center justify-center gap-2 transition-all active:scale-95 mb-6 text-[10px] font-bold tracking-wider ${
+              isDarkMode ? 'bg-[#333] border-[#444] text-[#d4c5b3]' : 'bg-[#3e3a35] border-[#3e3a35] text-[#f4f1ea]'
+            }`}
+          >
+            <Plus size={14} />
+            <span>وثيقة جديدة</span>
+          </button>
+
+          <div className="space-y-1 mb-6">
+            <div className="relative group">
+              <Search className="absolute right-2 top-1/2 -translate-y-1/2 text-[#8c7e6a]" size={12} />
+              <input
+                type="text"
+                placeholder="بحث..."
+                className={`w-full pr-7 pl-2 py-1.5 text-[9px] rounded-sm border outline-none transition-all ${
+                  isDarkMode ? 'bg-[#121212] border-[#333]' : 'bg-[#fcfbf9] border-[#dcd7cc]'
+                }`}
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+              />
+            </div>
+          </div>
+
+          <nav className="space-y-0.5 overflow-y-auto max-h-[50vh]">
+            <p className="text-[8px] text-[#8c7e6a] font-bold uppercase tracking-[0.2em] mb-3 pr-1">التصنيفات</p>
+            {categories.map(cat => (
+              <button
+                key={cat.name}
+                onClick={() => setFilterCategory(cat.name)}
+                className={`w-full flex items-center gap-2.5 px-3 py-1.5 transition-all text-[10px] border-r-2 ${
+                  filterCategory === cat.name 
+                  ? 'border-[#8c7e6a] text-[#3e3a35] dark:text-white font-bold bg-[#efe6d5]/50' 
+                  : 'border-transparent text-[#8c7e6a]'
+                }`}
+              >
+                {cat.icon}
+                <span>{cat.name}</span>
+              </button>
+            ))}
+          </nav>
         </div>
 
-        {/* Sidebar */}
-        <nav className="fixed right-0 h-screen w-[70px] xl:w-[245px] border-l border-zinc-800 p-4 flex flex-col justify-between z-50 bg-black">
-          <div className="flex flex-col gap-2">
-            <div className="py-8 px-3 cursor-pointer" onClick={() => setView('feed')}>
-              <h1 className="text-2xl font-bold italic hidden xl:block">Instagram</h1>
-              <div className="xl:hidden w-8 h-8 bg-gradient-to-tr from-yellow-400 via-red-500 to-purple-600 rounded-lg"></div>
+        <div className="mt-auto p-5 border-t border-[#dcd7cc] dark:border-[#333]">
+          <div className="flex items-center justify-between gap-2">
+            <button 
+              onClick={() => setIsDarkMode(!isDarkMode)}
+              className={`p-2 flex-1 flex justify-center items-center rounded-sm border ${isDarkMode ? 'bg-[#333] border-[#444]' : 'bg-[#efe6d5] border-[#dcd7cc]'}`}
+            >
+              {isDarkMode ? <Sun size={12} className="text-yellow-600" /> : <Moon size={12} className="text-[#3e3a35]" />}
+            </button>
+            <div className="flex gap-0.5 border border-[#dcd7cc] dark:border-[#333] p-0.5">
+              <button onClick={() => setViewMode('grid')} className={`p-1.5 ${viewMode === 'grid' ? 'bg-[#8c7e6a] text-white' : 'text-[#8c7e6a]'}`}><LayoutGrid size={12}/></button>
+              <button onClick={() => setViewMode('list')} className={`p-1.5 ${viewMode === 'list' ? 'bg-[#8c7e6a] text-white' : 'text-[#8c7e6a]'}`}><List size={12}/></button>
             </div>
-            
-            <NavItem icon={Home} label="الرئيسية" active={view === 'feed'} onClick={() => setView('feed')} />
-            <NavItem icon={Search} label="بحث" />
-            <NavItem icon={PlusSquare} label="إنشاء" onClick={() => setIsCreateModalOpen(true)} />
-            <NavItem img={userData.avatar} label="الملف الشخصي" active={view === 'profile'} onClick={() => setView('profile')} />
           </div>
-          <NavItem icon={LogOut} label="خروج" onClick={() => auth.signOut()} />
-        </nav>
+        </div>
+      </aside>
 
-        {/* Main Content */}
-        <main className="flex-1 mr-[70px] xl:mr-[245px] flex flex-col items-center">
-          
-          {view === 'feed' && (
-            <div className="w-full max-w-[470px] pt-8 px-4">
-              {posts.map(post => (
-                <PostCard 
-                  key={post.id} 
-                  post={post} 
-                  currentUserId={user.uid}
-                  onLike={() => handleToggleLike(post.id, post.likes)}
-                  onComment={(txt) => handleAddComment(post.id, txt)}
-                  onDelete={() => handleDeletePost(post.id)}
-                />
-              ))}
-              {posts.length === 0 && (
-                <div className="text-center py-20 text-zinc-500">
-                  <Camera className="w-12 h-12 mx-auto mb-4 opacity-20" />
-                  <p>لا توجد منشورات حالياً. ابدأ بمشاركة أولى لحظاتك!</p>
+      {/* Main Content */}
+      <main className="flex-1 mr-56 p-8 z-10 relative">
+        <header className="mb-8 flex justify-between items-end border-b border-[#dcd7cc] dark:border-[#333] pb-4">
+          <div>
+            <h2 className="text-lg font-bold italic tracking-wide">الخزانة الفكرية</h2>
+            <p className="text-[#8c7e6a] text-[8px] tracking-[0.3em] uppercase">{filteredNotes.length} سجل محفوظ</p>
+          </div>
+        </header>
+
+        {filteredNotes.length > 0 ? (
+          <div className={viewMode === 'grid' ? "grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4" : "flex flex-col gap-3 max-w-3xl"}>
+            {filteredNotes.map(note => (
+              <div
+                key={note.id}
+                className={`group relative transition-all duration-300 border-2 ${
+                  isDarkMode ? 'bg-[#1a1a1a]/90 border-[#333]' : `${note.color} border-[#dcd7cc]`
+                } ${note.font || 'font-serif'} flex flex-col min-h-[140px] shadow-sm hover:shadow-md hover:border-[#8c7e6a]`}
+              >
+                <div className="p-4 cursor-pointer flex-1" onClick={() => openEditor(note)}>
+                  <div className="flex justify-between items-start mb-2">
+                    <span className="text-[7px] font-bold uppercase text-[#8c7e6a] bg-black/5 px-1">{note.category}</span>
+                    {note.isPinned && <Pin size={10} className="text-[#8c7e6a] fill-current" />}
+                  </div>
+                  <h3 className="text-[11px] font-bold mb-1 line-clamp-1 border-b border-[#8c7e6a]/10 pb-1">{note.title || 'بدون عنوان'}</h3>
+                  <p className="text-[10px] leading-[1.6] line-clamp-4 italic opacity-80">{note.content}</p>
                 </div>
-              )}
+
+                <div className="px-4 py-2 flex items-center justify-between opacity-0 group-hover:opacity-100 transition-all bg-black/5">
+                  <span className="text-[7px] text-[#8c7e6a]">{new Date(note.createdAt).toLocaleDateString('ar-EG')}</span>
+                  <div className="flex gap-3">
+                    <button onClick={(e) => { e.stopPropagation(); togglePin(note.id); }}><Pin size={12} className="text-[#8c7e6a]" /></button>
+                    <button onClick={(e) => { e.stopPropagation(); deleteNote(note.id); }}><Trash2 size={12} className="text-[#8c7e6a] hover:text-red-700" /></button>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <div className="flex flex-col items-center justify-center py-32 opacity-20">
+            <Archive size={40} strokeWidth={0.5} />
+            <p className="text-[8px] uppercase tracking-[1em] mt-2">الأرشيف فارغ</p>
+          </div>
+        )}
+      </main>
+
+      {/* Advanced Editor Modal */}
+      {isEditorOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+          <div className={`w-full max-w-xl rounded-sm border-2 shadow-2xl overflow-hidden animate-in fade-in zoom-in duration-200 ${isDarkMode ? 'bg-[#1a1a1a] border-[#333]' : 'bg-[#f4f1ea] border-[#3e3a35]'}`}>
+            
+            {/* Header / Tools */}
+            <div className="flex items-center justify-between px-5 py-2 border-b border-[#3e3a35]/10 bg-black/5">
+              <div className="flex items-center gap-4">
+                <span className="text-[9px] font-bold uppercase opacity-60">تحرير المخطوطة</span>
+                
+                {/* Font Selector */}
+                <div className="flex items-center gap-1.5 border-r border-[#8c7e6a]/20 pr-4">
+                  <AlignLeft size={12} className="text-[#8c7e6a]" />
+                  <select 
+                    className="bg-transparent text-[9px] font-bold outline-none cursor-pointer"
+                    value={noteFont}
+                    onChange={(e) => setNoteFont(e.target.value)}
+                  >
+                    {fonts.map(f => (
+                      <option key={f.value} value={f.value} className="text-black">{f.name}</option>
+                    ))}
+                  </select>
+                </div>
+
+                {/* Color Selector */}
+                <div className="flex items-center gap-2">
+                  <Palette size={12} className="text-[#8c7e6a]" />
+                  <div className="flex gap-1">
+                    {colors.map(c => (
+                      <button
+                        key={c.name}
+                        title={c.name}
+                        onClick={() => setNoteColor(c.class)}
+                        className={`w-3 h-3 rounded-full border border-black/10 transition-transform hover:scale-125 ${c.class} ${noteColor === c.class ? 'ring-1 ring-[#8c7e6a] ring-offset-1' : ''}`}
+                      />
+                    ))}
+                  </div>
+                </div>
+              </div>
+              <button onClick={closeEditor} className="p-1 hover:bg-black/5"><X size={16} /></button>
             </div>
-          )}
 
-          {view === 'profile' && (
-            <div className="w-full max-w-4xl p-8 animate-in fade-in duration-500">
-              <header className="flex flex-col md:flex-row gap-12 items-center md:items-start mb-12">
-                <div className="relative group">
-                  <img src={userData.avatar} className="w-40 h-40 rounded-full border-2 border-zinc-800 p-1" />
-                  <div className="absolute inset-0 bg-black/40 rounded-full opacity-0 group-hover:opacity-100 flex items-center justify-center cursor-pointer transition">
-                    <Edit3 className="text-white" />
-                  </div>
+            {/* Editor Body */}
+            <div className={`p-8 transition-colors duration-300 ${isDarkMode ? 'bg-black/20' : noteColor}`}>
+              <div className="mb-4">
+                <label className="text-[8px] uppercase tracking-widest text-[#8c7e6a] block mb-1">العنوان</label>
+                <input
+                  type="text"
+                  placeholder="أدخل عنوان السجل..."
+                  className={`w-full text-xl font-bold bg-transparent border-none outline-none italic border-b border-[#8c7e6a]/20 pb-2 focus:border-[#8c7e6a] ${noteFont}`}
+                  value={noteTitle}
+                  onChange={(e) => setNoteTitle(e.target.value)}
+                />
+              </div>
+
+              <div className="flex items-center gap-4 mb-6">
+                <div className="flex items-center gap-2 px-2 py-1 border border-[#8c7e6a]/30 rounded-sm">
+                  <Tag size={10} className="text-[#8c7e6a]" />
+                  <select 
+                    className="bg-transparent text-[9px] border-none outline-none font-bold uppercase"
+                    value={noteCategory}
+                    onChange={(e) => setNoteCategory(e.target.value)}
+                  >
+                    {categories.filter(c => c.name !== 'الكل').map(cat => (
+                      <option key={cat.name} value={cat.name} className="text-black">{cat.name}</option>
+                    ))}
+                  </select>
                 </div>
-                <div className="flex flex-col gap-6 flex-1 text-center md:text-right">
-                  <div className="flex flex-col md:flex-row items-center gap-4">
-                    <h2 className="text-2xl font-light">{userData.username}</h2>
-                    <button 
-                      onClick={() => setIsEditProfileOpen(true)}
-                      className="bg-zinc-800 hover:bg-zinc-700 px-6 py-1.5 rounded-lg font-semibold text-sm transition"
-                    >تعديل الملف الشخصي</button>
-                    <Settings className="w-6 h-6 cursor-pointer" />
-                  </div>
-                  <div className="flex justify-center md:justify-start gap-10">
-                    <span><b>{posts.filter(p => p.userId === user.uid).length}</b> منشورات</span>
-                    <span><b>0</b> متابعون</span>
-                    <span><b>0</b> يتابع</span>
-                  </div>
-                  <div>
-                    <p className="font-bold">{userData.fullName}</p>
-                    <p className="text-zinc-400 text-sm whitespace-pre-line mt-1">{userData.bio}</p>
-                  </div>
-                </div>
-              </header>
-              <div className="border-t border-zinc-800 grid grid-cols-3 gap-1 mt-6">
-                {posts.filter(p => p.userId === user.uid).map(p => (
-                  <div key={p.id} className="aspect-square bg-zinc-900 group relative cursor-pointer">
-                    <img src={p.postImage} className="w-full h-full object-cover" />
-                    <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center gap-4 transition">
-                       <span className="flex items-center gap-1 font-bold"><Heart className="fill-white w-5 h-5" /> {p.likes.length}</span>
-                       <span className="flex items-center gap-1 font-bold"><MessageCircle className="fill-white w-5 h-5" /> {p.comments.length}</span>
-                    </div>
-                  </div>
-                ))}
+              </div>
+
+              <div className="mb-2">
+                <label className="text-[8px] uppercase tracking-widest text-[#8c7e6a] block mb-1">المحتوى</label>
+                <textarea
+                  placeholder="دوّن أفكارك هنا..."
+                  className={`w-full h-64 bg-transparent border-none outline-none resize-none text-[13px] leading-[1.8] italic ${noteFont}`}
+                  value={noteContent}
+                  onChange={(e) => setNoteContent(e.target.value)}
+                />
+              </div>
+
+              {/* Actions */}
+              <div className="flex justify-end gap-3 mt-4 border-t border-[#8c7e6a]/10 pt-4">
+                <button onClick={closeEditor} className="px-5 py-1.5 text-[10px] border border-[#8c7e6a]/40 uppercase font-bold hover:bg-black/5">إلغاء</button>
+                <button onClick={handleSaveNote} className="px-8 py-1.5 bg-[#3e3a35] text-[#f4f1ea] text-[10px] uppercase font-bold flex items-center gap-2 shadow-lg hover:bg-[#2e2a25]">
+                  <Save size={14} />
+                  <span>تأريخ الوثيقة</span>
+                </button>
               </div>
             </div>
-          )}
-        </main>
-
-        {/* Modals */}
-        {isCreateModalOpen && (
-          <Modal title="إنشاء منشور" onClose={() => setIsCreateModalOpen(false)}>
-            <CreatePostForm onPublish={handleCreatePost} />
-          </Modal>
-        )}
-
-        {isEditProfileOpen && (
-          <Modal title="تعديل الملف" onClose={() => setIsEditProfileOpen(false)}>
-            <EditProfileForm initialData={userData} onSave={handleUpdateProfile} />
-          </Modal>
-        )}
-
-      </div>
-    </div>
-  );
-}
-
-// --- Components ---
-
-const NavItem = ({ icon: Icon, img, label, active, onClick }) => (
-  <div 
-    onClick={onClick}
-    className={`flex items-center gap-4 p-3 rounded-xl cursor-pointer transition-all hover:bg-zinc-900 group ${active ? 'font-bold bg-zinc-900/50' : ''}`}
-  >
-    {img ? <img src={img} className={`w-6 h-6 rounded-full border ${active ? 'border-white' : 'border-zinc-700'}`} /> : <Icon className="w-6 h-6" />}
-    <span className="hidden xl:block text-lg">{label}</span>
-  </div>
-);
-
-const PostCard = ({ post, currentUserId, onLike, onComment, onDelete }) => {
-  const [commentText, setCommentText] = useState("");
-  const isLiked = post.likes.includes(currentUserId);
-  const isOwner = post.userId === currentUserId;
-
-  return (
-    <div className="w-full mb-10 border-b border-zinc-900 pb-8 mx-auto animate-in fade-in slide-in-from-bottom-4 duration-500">
-      <div className="flex items-center justify-between p-3">
-        <div className="flex items-center gap-3">
-          <img src={post.userImage} className="w-8 h-8 rounded-full border border-zinc-800" />
-          <span className="font-bold text-sm hover:underline cursor-pointer">{post.username}</span>
+          </div>
         </div>
-        {isOwner && (
-          <button onClick={onDelete} className="text-zinc-600 hover:text-red-500 transition">
-            <Trash2 className="w-5 h-5" />
-          </button>
-        )}
-      </div>
-      <div className="rounded-xl overflow-hidden bg-zinc-900 shadow-xl">
-        <img 
-          src={post.postImage} 
-          className="w-full h-auto max-h-[600px] object-contain" 
-          onDoubleClick={onLike} 
-        />
-      </div>
-      <div className="flex items-center justify-between py-4 px-1">
-        <div className="flex items-center gap-4">
-          <Heart 
-            onClick={onLike} 
-            className={`w-7 h-7 cursor-pointer transition ${isLiked ? 'fill-red-500 text-red-500 scale-125' : 'hover:scale-110'}`} 
-          />
-          <MessageCircle className="w-7 h-7 cursor-pointer hover:scale-110" />
-          <Send className="w-7 h-7 cursor-pointer hover:scale-110" />
-        </div>
-        <Bookmark className="w-7 h-7 cursor-pointer" />
-      </div>
-      <div className="px-1 text-sm">
-        <p className="font-extrabold mb-1">{post.likes.length.toLocaleString()} إعجاب</p>
-        <p><span className="font-bold ml-2">{post.username}</span>{post.caption}</p>
-        
-        <div className="mt-3 space-y-2">
-          {post.comments.map(c => (
-            <div key={c.id} className="flex gap-2 text-[13px]">
-              <span className="font-bold">{c.username}</span>
-              <span className="text-zinc-300">{c.text}</span>
-            </div>
-          ))}
-        </div>
-      </div>
-      <div className="mt-4 flex gap-3 items-center px-1">
-        <input 
-          type="text" 
-          placeholder="أضف تعليقاً..." 
-          className="bg-transparent flex-1 outline-none text-sm py-1 border-b border-transparent focus:border-zinc-800 transition"
-          value={commentText}
-          onChange={(e) => setCommentText(e.target.value)}
-          onKeyDown={(e) => e.key === 'Enter' && (onComment(commentText), setCommentText(''))}
-        />
-        {commentText && (
-          <button 
-            onClick={() => {onComment(commentText); setCommentText('');}} 
-            className="text-sky-500 font-bold text-sm animate-in fade-in"
-          >نشر</button>
-        )}
-      </div>
+      )}
     </div>
   );
 };
 
-const Modal = ({ title, onClose, children }) => (
-  <div className="fixed inset-0 z-[100] bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
-    <div className="bg-zinc-900 w-full max-w-lg rounded-2xl overflow-hidden border border-zinc-800 shadow-2xl animate-in zoom-in duration-200">
-      <div className="p-4 border-b border-zinc-800 flex justify-between items-center">
-        <button onClick={onClose} className="p-1 hover:bg-zinc-800 rounded-full transition"><X /></button>
-        <h3 className="font-bold text-white text-lg">{title}</h3>
-        <div className="w-8"></div>
-      </div>
-      {children}
-    </div>
-  </div>
-);
-
-const CreatePostForm = ({ onPublish }) => {
-  const [url, setUrl] = useState('');
-  const [cap, setCap] = useState('');
-  return (
-    <div className="p-6 space-y-6">
-      <div className="space-y-2">
-        <label className="text-xs font-bold text-zinc-500 uppercase">رابط الصورة</label>
-        <input 
-          type="text" 
-          placeholder="مثال: https://images.unsplash.com/..." 
-          className="w-full bg-zinc-800 p-3 rounded-xl outline-none border border-zinc-700 text-white focus:border-sky-500 transition"
-          value={url}
-          onChange={(e) => setUrl(e.target.value)}
-        />
-      </div>
-      {url && <img src={url} className="w-full h-56 object-cover rounded-xl border border-zinc-700 shadow-inner" alt="Preview" />}
-      <div className="space-y-2">
-        <label className="text-xs font-bold text-zinc-500 uppercase">الوصف</label>
-        <textarea 
-          placeholder="ماذا يدور في ذهنك؟" 
-          className="w-full bg-transparent border border-zinc-800 p-3 rounded-xl min-h-[100px] outline-none text-white focus:border-sky-500 transition"
-          value={cap}
-          onChange={(e) => setCap(e.target.value)}
-        />
-      </div>
-      <button 
-        onClick={() => onPublish(url, cap)} 
-        disabled={!url}
-        className="w-full bg-sky-500 py-3 rounded-xl font-bold hover:bg-sky-600 transition disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-sky-500/10"
-      >نشر الآن</button>
-    </div>
-  );
-};
-
-const EditProfileForm = ({ initialData, onSave }) => {
-  const [data, setData] = useState(initialData);
-  return (
-    <div className="p-6 space-y-4">
-      <div className="flex flex-col items-center mb-4">
-        <img src={data.avatar} className="w-20 h-20 rounded-full border mb-2" />
-        <button className="text-sky-500 text-xs font-bold">تغيير الصورة (تلقائي)</button>
-      </div>
-      <input 
-        type="text" 
-        placeholder="الاسم الكامل" 
-        className="w-full bg-zinc-800 p-3 rounded-lg border border-zinc-700"
-        value={data.fullName}
-        onChange={(e) => setData({...data, fullName: e.target.value})}
-      />
-      <textarea 
-        placeholder="النبذة التعريفية" 
-        className="w-full bg-zinc-800 p-3 rounded-lg border border-zinc-700 min-h-[80px]"
-        value={data.bio}
-        onChange={(e) => setData({...data, bio: e.target.value})}
-      />
-      <button 
-        onClick={() => onSave(data)}
-        className="w-full bg-white text-black py-3 rounded-lg font-bold hover:bg-zinc-200 transition"
-      >حفظ التغييرات</button>
-    </div>
-  );
-};
+export default App;
