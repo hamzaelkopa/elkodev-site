@@ -194,17 +194,13 @@
             transition: height 0.1s ease;
         }
 
-        /* مؤشر الصوت الإضافي */
+        /* مؤشر التفاعل الصوتي */
         .audio-status {
             font-size: 7px;
             color: var(--gold);
             margin-top: 5px;
             font-family: 'Orbitron', sans-serif;
-            opacity: 0;
-            transition: 0.3s;
-        }
-        .is-running .audio-status {
-            opacity: 1;
+            opacity: 0.6;
         }
     </style>
 </head>
@@ -215,7 +211,7 @@
             <div class="text-left">
                 <div class="ai-decor" style="position:static">AI_COGNITION_LINK: 98%</div>
                 <div class="ai-decor" style="position:static">NEURAL_SYNC: ACTIVE</div>
-                <div class="audio-status">AUDIO_STREAM: [FEEDBACK_LOOP_ACTIVE]</div>
+                <div class="audio-status">HAPTIC_FEEDBACK: ENABLED</div>
             </div>
             <div class="w-12 h-12 circle-ui"></div>
         </div>
@@ -260,10 +256,7 @@
         let timerInterval;
         let isRunning = false;
         
-        // متغيرات الصوت
         let audioCtx;
-        let ambientOscillator;
-        let ambientGain;
 
         const minEl = document.getElementById('min');
         const secEl = document.getElementById('sec');
@@ -279,77 +272,41 @@
             waveform.appendChild(bar);
         }
 
-        // تهيئة سياق الصوت عند أول تفاعل (متطلبات المتصفح)
         function initAudio() {
             if (!audioCtx) {
                 audioCtx = new (window.AudioContext || window.webkitAudioContext)();
             }
         }
 
-        // صوت مستمر أثناء التشغيل (Ambient Drone)
-        function startAmbientSound() {
+        // صوت نقرة تقنية فقط عند الضغط (Feedback)
+        function playClickSound(freq = 800, type = 'sine', duration = 0.1) {
             initAudio();
-            ambientOscillator = audioCtx.createOscillator();
-            ambientGain = audioCtx.createGain();
+            if (audioCtx.state === 'suspended') audioCtx.resume();
             
-            // تردد منخفض يشبه دوران المحركات
-            ambientOscillator.type = 'sawtooth';
-            ambientOscillator.frequency.setValueAtTime(55, audioCtx.currentTime); // نغمة منخفضة (A1)
-            
-            // فلتر لتنعيم الصوت وجعله "محيطياً"
-            const filter = audioCtx.createBiquadFilter();
-            filter.type = 'lowpass';
-            filter.frequency.setValueAtTime(400, audioCtx.currentTime);
-            
-            ambientGain.gain.setValueAtTime(0, audioCtx.currentTime);
-            ambientGain.gain.linearRampToValueAtTime(0.03, audioCtx.currentTime + 0.5); // رفع الصوت تدريجياً
-            
-            ambientOscillator.connect(filter);
-            filter.connect(ambientGain);
-            ambientGain.connect(audioCtx.destination);
-            
-            ambientOscillator.start();
-        }
-
-        function stopAmbientSound() {
-            if (ambientGain) {
-                ambientGain.gain.linearRampToValueAtTime(0, audioCtx.currentTime + 0.3);
-                setTimeout(() => {
-                    if (ambientOscillator) ambientOscillator.stop();
-                }, 300);
-            }
-        }
-
-        // صوت نقرة تقنية (Click)
-        function playClickSound(freq = 800, type = 'sine') {
-            initAudio();
             const osc = audioCtx.createOscillator();
             const g = audioCtx.createGain();
             
             osc.type = type;
             osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
-            osc.frequency.exponentialRampToValueAtTime(freq/2, audioCtx.currentTime + 0.1);
+            osc.frequency.exponentialRampToValueAtTime(freq/2, audioCtx.currentTime + duration);
             
             g.gain.setValueAtTime(0.1, audioCtx.currentTime);
-            g.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + 0.1);
+            g.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + duration);
             
             osc.connect(g);
             g.connect(audioCtx.destination);
             
             osc.start();
-            osc.stop(audioCtx.currentTime + 0.1);
+            osc.stop(audioCtx.currentTime + duration);
         }
 
         function toggleChrono() {
-            initAudio();
             if (!isRunning) {
                 startChrono();
-                playClickSound(1200, 'square'); // صوت بدء مميز
-                startAmbientSound();
+                playClickSound(1200, 'square', 0.15); // صوت بدء حاد
             } else {
                 stopChrono();
-                playClickSound(600, 'sine'); // صوت إيقاف
-                stopAmbientSound();
+                playClickSound(600, 'sine', 0.1); // صوت إيقاف ناعم
             }
         }
 
@@ -371,9 +328,8 @@
         }
 
         function resetChrono() {
-            playClickSound(400, 'triangle');
+            playClickSound(400, 'triangle', 0.2);
             stopChrono();
-            stopAmbientSound();
             elapsedTime = 0;
             minEl.innerText = "00";
             secEl.innerText = "00";
@@ -407,7 +363,7 @@
 
         function lapTime() {
             if(!isRunning) return;
-            playClickSound(1000, 'sine');
+            playClickSound(1000, 'sine', 0.05);
             const div = document.createElement('div');
             div.className = 'lap-item';
             div.innerHTML = `<span>ENTRY_${lapsContainer.children.length + 1}</span> <span>${minEl.innerText}:${secEl.innerText}${msEl.innerText}</span>`;
