@@ -1,389 +1,418 @@
-import React, { useState, useEffect, useRef } from 'react';
-import * as THREE from 'three';
-import { 
-  Plus, 
-  Search, 
-  Trash2, 
-  Save, 
-  X, 
-  Pin, 
-  Tag, 
-  LayoutGrid, 
-  List, 
-  Moon, 
-  Sun,
-  Archive,
-  Compass,
-  Briefcase,
-  BookOpen,
-  User,
-  Lightbulb,
-  FileText,
-  Type,
-  Palette,
-  AlignLeft
-} from 'lucide-react';
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Chrono Interface</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;700;900&family=Cairo:wght@300;400;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --cyan: #00f2ff;
+            --red: #ff003c;
+            --gold: #d4af37;
+            --deep-bg: #020202;
+            --panel-border: rgba(0, 242, 255, 0.2);
+        }
 
-// --- Three.js Background Component ---
-const ThreeBackground = ({ isDarkMode }) => {
-  const mountRef = useRef(null);
+        body {
+            background-color: var(--deep-bg);
+            background-image: 
+                radial-gradient(circle at 50% 50%, rgba(212, 175, 55, 0.05) 0%, transparent 80%),
+                url('https://www.transparenttextures.com/patterns/carbon-fibre.png');
+            color: white;
+            font-family: 'Cairo', sans-serif;
+            height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            perspective: 1200px;
+            overflow: hidden;
+        }
 
-  useEffect(() => {
-    let width = window.innerWidth;
-    let height = window.innerHeight;
-    
-    const scene = new THREE.Scene();
-    const camera = new THREE.PerspectiveCamera(75, width / height, 0.1, 1000);
-    const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
-    
-    renderer.setSize(width, height);
-    renderer.setPixelRatio(window.devicePixelRatio);
-    mountRef.current.appendChild(renderer.domElement);
+        .ai-frame {
+            position: relative;
+            width: 600px;
+            padding: 40px;
+            background: rgba(5, 5, 5, 0.8);
+            border: 1px solid var(--panel-border);
+            border-top: 4px solid var(--cyan);
+            border-bottom: 4px solid var(--red);
+            transform: rotateX(5deg);
+            box-shadow: 
+                0 20px 50px rgba(0,0,0,0.9),
+                0 0 20px rgba(0, 242, 255, 0.1);
+            backdrop-filter: blur(15px);
+        }
 
-    const particlesCount = 1200;
-    const posArray = new Float32Array(particlesCount * 3);
-    for (let i = 0; i < particlesCount * 3; i++) {
-      posArray[i] = (Math.random() - 0.5) * 10;
-    }
+        .ai-decor {
+            position: absolute;
+            font-family: 'Orbitron', sans-serif;
+            font-size: 8px;
+            color: var(--cyan);
+            opacity: 0.5;
+            text-transform: uppercase;
+        }
 
-    const particlesGeometry = new THREE.BufferGeometry();
-    particlesGeometry.setAttribute('position', new THREE.BufferAttribute(posArray, 3));
+        .display-unit {
+            position: relative;
+            background: linear-gradient(135deg, rgba(20,20,20,0.8), rgba(0,0,0,0.9));
+            border-radius: 10px;
+            padding: 40px 20px;
+            margin: 30px 0;
+            box-shadow: inset 0 0 30px rgba(0, 242, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+        }
 
-    const particlesMaterial = new THREE.PointsMaterial({
-      size: 0.004,
-      color: isDarkMode ? 0x8c7e6a : 0x5c564e,
-      transparent: true,
-      opacity: 0.25,
-    });
+        .main-timer {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 5rem;
+            font-weight: 900;
+            background: linear-gradient(to bottom, #fff 40%, var(--cyan) 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            filter: drop-shadow(0 0 15px rgba(0, 242, 255, 0.4));
+            letter-spacing: -2px;
+            display: flex;
+            justify-content: center;
+            align-items: baseline;
+            direction: ltr;
+        }
 
-    const particlesMesh = new THREE.Points(particlesGeometry, particlesMaterial);
-    scene.add(particlesMesh);
-    camera.position.z = 3;
+        .milliseconds {
+            font-size: 1.8rem;
+            color: var(--red);
+            margin-left: 10px;
+            -webkit-text-fill-color: var(--red);
+        }
 
-    const animate = () => {
-      requestAnimationFrame(animate);
-      particlesMesh.rotation.y += 0.0008;
-      particlesMesh.rotation.x += 0.0003;
-      renderer.render(scene, camera);
-    };
+        .btn-grid {
+            display: grid;
+            grid-template-columns: 1fr 2fr 1fr;
+            gap: 15px;
+            align-items: center;
+        }
 
-    animate();
+        .cyber-btn {
+            position: relative;
+            padding: 15px;
+            background: #111;
+            border: 1px solid #333;
+            cursor: pointer;
+            overflow: hidden;
+            transition: 0.3s;
+            clip-path: polygon(15% 0, 100% 0, 85% 100%, 0 100%);
+        }
 
-    const handleResize = () => {
-      width = window.innerWidth;
-      height = window.innerHeight;
-      renderer.setSize(width, height);
-      camera.aspect = width / height;
-      camera.updateProjectionMatrix();
-    };
+        .btn-start {
+            border-top: 2px solid var(--cyan);
+            height: 70px;
+            background: linear-gradient(45deg, #0a0a0a, #1a1a1a);
+        }
 
-    window.addEventListener('resize', handleResize);
-    return () => {
-      window.removeEventListener('resize', handleResize);
-      if (mountRef.current) mountRef.current.removeChild(renderer.domElement);
-    };
-  }, [isDarkMode]);
+        .btn-start::after {
+            content: "";
+            position: absolute;
+            top: 0; left: -100%;
+            width: 100%; height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(0, 242, 255, 0.2), transparent);
+            transition: 0.5s;
+        }
 
-  return <div ref={mountRef} className="fixed inset-0 -z-10 pointer-events-none" />;
-};
+        .btn-start:hover::after {
+            left: 100%;
+        }
 
-const App = () => {
-  // --- State ---
-  const [notes, setNotes] = useState([]);
-  const [isEditorOpen, setIsEditorOpen] = useState(false);
-  const [currentNote, setCurrentNote] = useState(null);
-  const [searchTerm, setSearchTerm] = useState('');
-  const [filterCategory, setFilterCategory] = useState('الكل');
-  const [viewMode, setViewMode] = useState('grid');
-  const [isDarkMode, setIsDarkMode] = useState(false);
+        .btn-text {
+            font-family: 'Orbitron', sans-serif;
+            font-weight: 700;
+            letter-spacing: 2px;
+            font-size: 1.2rem;
+            color: var(--cyan);
+        }
 
-  // Form State
-  const [noteTitle, setNoteTitle] = useState('');
-  const [noteContent, setNoteContent] = useState('');
-  const [noteCategory, setNoteCategory] = useState('عام');
-  const [noteColor, setNoteColor] = useState('bg-[#f4f1ea]');
-  const [noteFont, setNoteFont] = useState('font-serif');
+        .circle-ui {
+            position: absolute;
+            border: 2px dashed var(--cyan);
+            border-radius: 50%;
+            opacity: 0.3;
+            animation: rotate 10s linear infinite;
+        }
 
-  const categories = [
-    { name: 'الكل', icon: <Compass size={14} /> },
-    { name: 'عام', icon: <FileText size={14} /> },
-    { name: 'عمل', icon: <Briefcase size={14} /> },
-    { name: 'دراسة', icon: <BookOpen size={14} /> },
-    { name: 'شخصي', icon: <User size={14} /> },
-    { name: 'أفكار', icon: <Lightbulb size={14} /> }
-  ];
+        @keyframes rotate {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
 
-  const fonts = [
-    { name: 'كلاسيكي (Serif)', value: 'font-serif' },
-    { name: 'آلة كاتبة (Mono)', value: 'font-mono' },
-    { name: 'عصري (Sans)', value: 'font-sans' }
-  ];
+        #laps {
+            max-height: 120px;
+            overflow-y: auto;
+            scrollbar-width: none;
+            margin-top: 20px;
+            font-family: 'Orbitron', sans-serif;
+            font-size: 10px;
+        }
 
-  const colors = [
-    { name: 'ورق قديم', class: 'bg-[#f4f1ea]' },
-    { name: 'سيبيا', class: 'bg-[#efe6d5]' },
-    { name: 'وردي باهت', class: 'bg-[#e9e0d8]' },
-    { name: 'أزرق عتيق', class: 'bg-[#d8e0e9]' },
-    { name: 'أبيض عاجي', class: 'bg-[#ffffff]' },
-    { name: 'رمادي حجري', class: 'bg-[#e2e2e2]' }
-  ];
+        .lap-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px;
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+            color: #666;
+            transition: 0.3s;
+        }
 
-  useEffect(() => {
-    const savedNotes = localStorage.getItem('v3_notes_data');
-    if (savedNotes) setNotes(JSON.parse(savedNotes));
-  }, []);
+        .lap-item:hover {
+            color: var(--gold);
+            background: rgba(212, 175, 55, 0.05);
+        }
 
-  useEffect(() => {
-    localStorage.setItem('v3_notes_data', JSON.stringify(notes));
-  }, [notes]);
+        .is-running .btn-start {
+            border-top-color: var(--red);
+            box-shadow: 0 0 15px rgba(255, 0, 60, 0.2);
+        }
+        .is-running .btn-text {
+            color: var(--red);
+        }
 
-  const handleSaveNote = () => {
-    if (!noteTitle && !noteContent) return;
-    if (currentNote) {
-      setNotes(notes.map(n => n.id === currentNote.id ? {
-        ...n, title: noteTitle, content: noteContent, category: noteCategory, color: noteColor, font: noteFont, updatedAt: new Date().toISOString()
-      } : n));
-    } else {
-      setNotes([{
-        id: Date.now(), title: noteTitle, content: noteContent, category: noteCategory, color: noteColor, font: noteFont, isPinned: false, createdAt: new Date().toISOString()
-      }, ...notes]);
-    }
-    closeEditor();
-  };
+        .waveform {
+            position: absolute;
+            bottom: 10px;
+            left: 10%;
+            width: 80%;
+            height: 30px;
+            display: flex;
+            align-items: flex-end;
+            gap: 2px;
+            opacity: 0.2;
+        }
 
-  const deleteNote = (id) => setNotes(notes.filter(n => n.id !== id));
-  const togglePin = (id) => setNotes(notes.map(n => n.id === id ? { ...n, isPinned: !n.isPinned } : n));
+        .bar {
+            flex: 1;
+            background: var(--cyan);
+            height: 10%;
+            transition: height 0.1s ease;
+        }
 
-  const openEditor = (note = null) => {
-    if (note) {
-      setCurrentNote(note); setNoteTitle(note.title); setNoteContent(note.content); setNoteCategory(note.category); setNoteColor(note.color); setNoteFont(note.font || 'font-serif');
-    } else {
-      setCurrentNote(null); setNoteTitle(''); setNoteContent(''); setNoteCategory('عام'); setNoteColor('bg-[#f4f1ea]'); setNoteFont('font-serif');
-    }
-    setIsEditorOpen(true);
-  };
+        /* مؤشر الصوت الإضافي */
+        .audio-status {
+            font-size: 7px;
+            color: var(--gold);
+            margin-top: 5px;
+            font-family: 'Orbitron', sans-serif;
+            opacity: 0;
+            transition: 0.3s;
+        }
+        .is-running .audio-status {
+            opacity: 1;
+        }
+    </style>
+</head>
+<body>
 
-  const closeEditor = () => { setIsEditorOpen(false); setCurrentNote(null); };
-
-  const filteredNotes = notes
-    .filter(n => (n.title.toLowerCase().includes(searchTerm.toLowerCase()) || n.content.toLowerCase().includes(searchTerm.toLowerCase())) && (filterCategory === 'الكل' || n.category === filterCategory))
-    .sort((a, b) => (b.isPinned ? 1 : 0) - (a.isPinned ? 1 : 0));
-
-  return (
-    <div className={`flex min-h-screen transition-colors duration-500 font-serif ${isDarkMode ? 'bg-[#121212] text-[#d4c5b3]' : 'bg-[#f9f7f2] text-[#3e3a35]'}`} dir="rtl">
-      
-      <ThreeBackground isDarkMode={isDarkMode} />
-
-      {/* Sidebar */}
-      <aside className={`w-56 fixed h-full z-40 flex flex-col border-l transition-all duration-300 backdrop-blur-md ${isDarkMode ? 'bg-[#1a1a1a]/90 border-[#333]' : 'bg-[#f4f1ea]/90 border-[#dcd7cc]'}`}>
-        <div className="p-5">
-          <div className="flex flex-col items-center text-center mb-6 border-b border-[#dcd7cc] dark:border-[#333] pb-4">
-            <div className={`p-2 rounded-full mb-2 ${isDarkMode ? 'bg-[#333]' : 'bg-[#efe6d5]'}`}>
-              <Type size={18} className="text-[#8c7e6a]" />
+    <div class="ai-frame" id="mainFrame">
+        <div class="flex justify-between items-start">
+            <div class="text-left">
+                <div class="ai-decor" style="position:static">AI_COGNITION_LINK: 98%</div>
+                <div class="ai-decor" style="position:static">NEURAL_SYNC: ACTIVE</div>
+                <div class="audio-status">AUDIO_STREAM: [FEEDBACK_LOOP_ACTIVE]</div>
             </div>
-            <h1 className="text-[10px] font-bold tracking-[0.2em] uppercase">الأرشيف المطور</h1>
-            <p className="text-[7px] text-[#8c7e6a] uppercase mt-1">تخصيص كامل للمخطوطات</p>
-          </div>
-
-          <button 
-            onClick={() => openEditor()}
-            className={`w-full py-2 rounded-sm border flex items-center justify-center gap-2 transition-all active:scale-95 mb-6 text-[10px] font-bold tracking-wider ${
-              isDarkMode ? 'bg-[#333] border-[#444] text-[#d4c5b3]' : 'bg-[#3e3a35] border-[#3e3a35] text-[#f4f1ea]'
-            }`}
-          >
-            <Plus size={14} />
-            <span>وثيقة جديدة</span>
-          </button>
-
-          <div className="space-y-1 mb-6">
-            <div className="relative group">
-              <Search className="absolute right-2 top-1/2 -translate-y-1/2 text-[#8c7e6a]" size={12} />
-              <input
-                type="text"
-                placeholder="بحث..."
-                className={`w-full pr-7 pl-2 py-1.5 text-[9px] rounded-sm border outline-none transition-all ${
-                  isDarkMode ? 'bg-[#121212] border-[#333]' : 'bg-[#fcfbf9] border-[#dcd7cc]'
-                }`}
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-              />
-            </div>
-          </div>
-
-          <nav className="space-y-0.5 overflow-y-auto max-h-[50vh]">
-            <p className="text-[8px] text-[#8c7e6a] font-bold uppercase tracking-[0.2em] mb-3 pr-1">التصنيفات</p>
-            {categories.map(cat => (
-              <button
-                key={cat.name}
-                onClick={() => setFilterCategory(cat.name)}
-                className={`w-full flex items-center gap-2.5 px-3 py-1.5 transition-all text-[10px] border-r-2 ${
-                  filterCategory === cat.name 
-                  ? 'border-[#8c7e6a] text-[#3e3a35] dark:text-white font-bold bg-[#efe6d5]/50' 
-                  : 'border-transparent text-[#8c7e6a]'
-                }`}
-              >
-                {cat.icon}
-                <span>{cat.name}</span>
-              </button>
-            ))}
-          </nav>
+            <div class="w-12 h-12 circle-ui"></div>
         </div>
 
-        <div className="mt-auto p-5 border-t border-[#dcd7cc] dark:border-[#333]">
-          <div className="flex items-center justify-between gap-2">
-            <button 
-              onClick={() => setIsDarkMode(!isDarkMode)}
-              className={`p-2 flex-1 flex justify-center items-center rounded-sm border ${isDarkMode ? 'bg-[#333] border-[#444]' : 'bg-[#efe6d5] border-[#dcd7cc]'}`}
-            >
-              {isDarkMode ? <Sun size={12} className="text-yellow-600" /> : <Moon size={12} className="text-[#3e3a35]" />}
+        <div class="display-unit">
+            <div class="ai-decor" style="top:10px; left:10px">CORE_TIME_STAMP</div>
+            <div class="main-timer">
+                <span id="min">00</span>:<span id="sec">00</span>
+                <span class="milliseconds" id="ms">.00</span>
+            </div>
+            <div class="waveform" id="waveform"></div>
+        </div>
+
+        <div class="btn-grid">
+            <button class="cyber-btn" onclick="resetChrono()">
+                <span class="text-[10px] text-gray-500 font-bold">RESET</span>
             </button>
-            <div className="flex gap-0.5 border border-[#dcd7cc] dark:border-[#333] p-0.5">
-              <button onClick={() => setViewMode('grid')} className={`p-1.5 ${viewMode === 'grid' ? 'bg-[#8c7e6a] text-white' : 'text-[#8c7e6a]'}`}><LayoutGrid size={12}/></button>
-              <button onClick={() => setViewMode('list')} className={`p-1.5 ${viewMode === 'list' ? 'bg-[#8c7e6a] text-white' : 'text-[#8c7e6a]'}`}><List size={12}/></button>
-            </div>
-          </div>
-        </div>
-      </aside>
-
-      {/* Main Content */}
-      <main className="flex-1 mr-56 p-8 z-10 relative">
-        <header className="mb-8 flex justify-between items-end border-b border-[#dcd7cc] dark:border-[#333] pb-4">
-          <div>
-            <h2 className="text-lg font-bold italic tracking-wide">الخزانة الفكرية</h2>
-            <p className="text-[#8c7e6a] text-[8px] tracking-[0.3em] uppercase">{filteredNotes.length} سجل محفوظ</p>
-          </div>
-        </header>
-
-        {filteredNotes.length > 0 ? (
-          <div className={viewMode === 'grid' ? "grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4" : "flex flex-col gap-3 max-w-3xl"}>
-            {filteredNotes.map(note => (
-              <div
-                key={note.id}
-                className={`group relative transition-all duration-300 border-2 ${
-                  isDarkMode ? 'bg-[#1a1a1a]/90 border-[#333]' : `${note.color} border-[#dcd7cc]`
-                } ${note.font || 'font-serif'} flex flex-col min-h-[140px] shadow-sm hover:shadow-md hover:border-[#8c7e6a]`}
-              >
-                <div className="p-4 cursor-pointer flex-1" onClick={() => openEditor(note)}>
-                  <div className="flex justify-between items-start mb-2">
-                    <span className="text-[7px] font-bold uppercase text-[#8c7e6a] bg-black/5 px-1">{note.category}</span>
-                    {note.isPinned && <Pin size={10} className="text-[#8c7e6a] fill-current" />}
-                  </div>
-                  <h3 className="text-[11px] font-bold mb-1 line-clamp-1 border-b border-[#8c7e6a]/10 pb-1">{note.title || 'بدون عنوان'}</h3>
-                  <p className="text-[10px] leading-[1.6] line-clamp-4 italic opacity-80">{note.content}</p>
-                </div>
-
-                <div className="px-4 py-2 flex items-center justify-between opacity-0 group-hover:opacity-100 transition-all bg-black/5">
-                  <span className="text-[7px] text-[#8c7e6a]">{new Date(note.createdAt).toLocaleDateString('ar-EG')}</span>
-                  <div className="flex gap-3">
-                    <button onClick={(e) => { e.stopPropagation(); togglePin(note.id); }}><Pin size={12} className="text-[#8c7e6a]" /></button>
-                    <button onClick={(e) => { e.stopPropagation(); deleteNote(note.id); }}><Trash2 size={12} className="text-[#8c7e6a] hover:text-red-700" /></button>
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-        ) : (
-          <div className="flex flex-col items-center justify-center py-32 opacity-20">
-            <Archive size={40} strokeWidth={0.5} />
-            <p className="text-[8px] uppercase tracking-[1em] mt-2">الأرشيف فارغ</p>
-          </div>
-        )}
-      </main>
-
-      {/* Advanced Editor Modal */}
-      {isEditorOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
-          <div className={`w-full max-w-xl rounded-sm border-2 shadow-2xl overflow-hidden animate-in fade-in zoom-in duration-200 ${isDarkMode ? 'bg-[#1a1a1a] border-[#333]' : 'bg-[#f4f1ea] border-[#3e3a35]'}`}>
             
-            {/* Header / Tools */}
-            <div className="flex items-center justify-between px-5 py-2 border-b border-[#3e3a35]/10 bg-black/5">
-              <div className="flex items-center gap-4">
-                <span className="text-[9px] font-bold uppercase opacity-60">تحرير المخطوطة</span>
-                
-                {/* Font Selector */}
-                <div className="flex items-center gap-1.5 border-r border-[#8c7e6a]/20 pr-4">
-                  <AlignLeft size={12} className="text-[#8c7e6a]" />
-                  <select 
-                    className="bg-transparent text-[9px] font-bold outline-none cursor-pointer"
-                    value={noteFont}
-                    onChange={(e) => setNoteFont(e.target.value)}
-                  >
-                    {fonts.map(f => (
-                      <option key={f.value} value={f.value} className="text-black">{f.name}</option>
-                    ))}
-                  </select>
-                </div>
-
-                {/* Color Selector */}
-                <div className="flex items-center gap-2">
-                  <Palette size={12} className="text-[#8c7e6a]" />
-                  <div className="flex gap-1">
-                    {colors.map(c => (
-                      <button
-                        key={c.name}
-                        title={c.name}
-                        onClick={() => setNoteColor(c.class)}
-                        className={`w-3 h-3 rounded-full border border-black/10 transition-transform hover:scale-125 ${c.class} ${noteColor === c.class ? 'ring-1 ring-[#8c7e6a] ring-offset-1' : ''}`}
-                      />
-                    ))}
-                  </div>
-                </div>
-              </div>
-              <button onClick={closeEditor} className="p-1 hover:bg-black/5"><X size={16} /></button>
-            </div>
-
-            {/* Editor Body */}
-            <div className={`p-8 transition-colors duration-300 ${isDarkMode ? 'bg-black/20' : noteColor}`}>
-              <div className="mb-4">
-                <label className="text-[8px] uppercase tracking-widest text-[#8c7e6a] block mb-1">العنوان</label>
-                <input
-                  type="text"
-                  placeholder="أدخل عنوان السجل..."
-                  className={`w-full text-xl font-bold bg-transparent border-none outline-none italic border-b border-[#8c7e6a]/20 pb-2 focus:border-[#8c7e6a] ${noteFont}`}
-                  value={noteTitle}
-                  onChange={(e) => setNoteTitle(e.target.value)}
-                />
-              </div>
-
-              <div className="flex items-center gap-4 mb-6">
-                <div className="flex items-center gap-2 px-2 py-1 border border-[#8c7e6a]/30 rounded-sm">
-                  <Tag size={10} className="text-[#8c7e6a]" />
-                  <select 
-                    className="bg-transparent text-[9px] border-none outline-none font-bold uppercase"
-                    value={noteCategory}
-                    onChange={(e) => setNoteCategory(e.target.value)}
-                  >
-                    {categories.filter(c => c.name !== 'الكل').map(cat => (
-                      <option key={cat.name} value={cat.name} className="text-black">{cat.name}</option>
-                    ))}
-                  </select>
-                </div>
-              </div>
-
-              <div className="mb-2">
-                <label className="text-[8px] uppercase tracking-widest text-[#8c7e6a] block mb-1">المحتوى</label>
-                <textarea
-                  placeholder="دوّن أفكارك هنا..."
-                  className={`w-full h-64 bg-transparent border-none outline-none resize-none text-[13px] leading-[1.8] italic ${noteFont}`}
-                  value={noteContent}
-                  onChange={(e) => setNoteContent(e.target.value)}
-                />
-              </div>
-
-              {/* Actions */}
-              <div className="flex justify-end gap-3 mt-4 border-t border-[#8c7e6a]/10 pt-4">
-                <button onClick={closeEditor} className="px-5 py-1.5 text-[10px] border border-[#8c7e6a]/40 uppercase font-bold hover:bg-black/5">إلغاء</button>
-                <button onClick={handleSaveNote} className="px-8 py-1.5 bg-[#3e3a35] text-[#f4f1ea] text-[10px] uppercase font-bold flex items-center gap-2 shadow-lg hover:bg-[#2e2a25]">
-                  <Save size={14} />
-                  <span>تأريخ الوثيقة</span>
-                </button>
-              </div>
-            </div>
-          </div>
+            <button class="cyber-btn btn-start" id="triggerBtn" onclick="toggleChrono()">
+                <span class="btn-text" id="btnLabel">INITIATE</span>
+            </button>
+            
+            <button class="cyber-btn" onclick="lapTime()">
+                <span class="text-[10px] text-gray-500 font-bold">LAP</span>
+            </button>
         </div>
-      )}
-    </div>
-  );
-};
 
-export default App;
+        <div id="laps"></div>
+
+        <div class="mt-8 flex justify-between items-end border-t border-gray-900 pt-4">
+            <div class="text-[8px] text-gray-600 font-mono text-right">
+                DATA_STREAM: [ENCRYPTED]<br>
+                ORIGIN: NEURAL_CORE_X1
+            </div>
+            <div class="text-[14px] text-red-600 font-black italic">RED_EYE_ACTIVE</div>
+        </div>
+    </div>
+
+    <script>
+        let startTime;
+        let elapsedTime = 0;
+        let timerInterval;
+        let isRunning = false;
+        
+        // متغيرات الصوت
+        let audioCtx;
+        let ambientOscillator;
+        let ambientGain;
+
+        const minEl = document.getElementById('min');
+        const secEl = document.getElementById('sec');
+        const msEl = document.getElementById('ms');
+        const btnLabel = document.getElementById('btnLabel');
+        const mainFrame = document.getElementById('mainFrame');
+        const lapsContainer = document.getElementById('laps');
+        const waveform = document.getElementById('waveform');
+
+        for(let i=0; i<40; i++) {
+            const bar = document.createElement('div');
+            bar.className = 'bar';
+            waveform.appendChild(bar);
+        }
+
+        // تهيئة سياق الصوت عند أول تفاعل (متطلبات المتصفح)
+        function initAudio() {
+            if (!audioCtx) {
+                audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            }
+        }
+
+        // صوت مستمر أثناء التشغيل (Ambient Drone)
+        function startAmbientSound() {
+            initAudio();
+            ambientOscillator = audioCtx.createOscillator();
+            ambientGain = audioCtx.createGain();
+            
+            // تردد منخفض يشبه دوران المحركات
+            ambientOscillator.type = 'sawtooth';
+            ambientOscillator.frequency.setValueAtTime(55, audioCtx.currentTime); // نغمة منخفضة (A1)
+            
+            // فلتر لتنعيم الصوت وجعله "محيطياً"
+            const filter = audioCtx.createBiquadFilter();
+            filter.type = 'lowpass';
+            filter.frequency.setValueAtTime(400, audioCtx.currentTime);
+            
+            ambientGain.gain.setValueAtTime(0, audioCtx.currentTime);
+            ambientGain.gain.linearRampToValueAtTime(0.03, audioCtx.currentTime + 0.5); // رفع الصوت تدريجياً
+            
+            ambientOscillator.connect(filter);
+            filter.connect(ambientGain);
+            ambientGain.connect(audioCtx.destination);
+            
+            ambientOscillator.start();
+        }
+
+        function stopAmbientSound() {
+            if (ambientGain) {
+                ambientGain.gain.linearRampToValueAtTime(0, audioCtx.currentTime + 0.3);
+                setTimeout(() => {
+                    if (ambientOscillator) ambientOscillator.stop();
+                }, 300);
+            }
+        }
+
+        // صوت نقرة تقنية (Click)
+        function playClickSound(freq = 800, type = 'sine') {
+            initAudio();
+            const osc = audioCtx.createOscillator();
+            const g = audioCtx.createGain();
+            
+            osc.type = type;
+            osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
+            osc.frequency.exponentialRampToValueAtTime(freq/2, audioCtx.currentTime + 0.1);
+            
+            g.gain.setValueAtTime(0.1, audioCtx.currentTime);
+            g.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + 0.1);
+            
+            osc.connect(g);
+            g.connect(audioCtx.destination);
+            
+            osc.start();
+            osc.stop(audioCtx.currentTime + 0.1);
+        }
+
+        function toggleChrono() {
+            initAudio();
+            if (!isRunning) {
+                startChrono();
+                playClickSound(1200, 'square'); // صوت بدء مميز
+                startAmbientSound();
+            } else {
+                stopChrono();
+                playClickSound(600, 'sine'); // صوت إيقاف
+                stopAmbientSound();
+            }
+        }
+
+        function startChrono() {
+            isRunning = true;
+            startTime = Date.now() - elapsedTime;
+            timerInterval = setInterval(update, 10);
+            mainFrame.classList.add('is-running');
+            btnLabel.innerText = 'TERMINATE';
+        }
+
+        function stopChrono() {
+            isRunning = false;
+            clearInterval(timerInterval);
+            elapsedTime = Date.now() - startTime;
+            mainFrame.classList.remove('is-running');
+            btnLabel.innerText = 'RESUME';
+            resetBars();
+        }
+
+        function resetChrono() {
+            playClickSound(400, 'triangle');
+            stopChrono();
+            stopAmbientSound();
+            elapsedTime = 0;
+            minEl.innerText = "00";
+            secEl.innerText = "00";
+            msEl.innerText = ".00";
+            btnLabel.innerText = 'INITIATE';
+            lapsContainer.innerHTML = '';
+        }
+
+        function update() {
+            const time = Date.now() - startTime;
+            const m = Math.floor(time / 60000);
+            const s = Math.floor((time % 60000) / 1000);
+            const ms = Math.floor((time % 1000) / 10);
+
+            minEl.innerText = m.toString().padStart(2, '0');
+            secEl.innerText = s.toString().padStart(2, '0');
+            msEl.innerText = "." + ms.toString().padStart(2, '0');
+            
+            if(isRunning) {
+                document.querySelectorAll('.bar').forEach(bar => {
+                    bar.style.height = (Math.random() * 90 + 10) + '%';
+                });
+            }
+        }
+
+        function resetBars() {
+            document.querySelectorAll('.bar').forEach(bar => {
+                bar.style.height = '10%';
+            });
+        }
+
+        function lapTime() {
+            if(!isRunning) return;
+            playClickSound(1000, 'sine');
+            const div = document.createElement('div');
+            div.className = 'lap-item';
+            div.innerHTML = `<span>ENTRY_${lapsContainer.children.length + 1}</span> <span>${minEl.innerText}:${secEl.innerText}${msEl.innerText}</span>`;
+            lapsContainer.prepend(div);
+        }
+    </script>
+</body>
+</html>
